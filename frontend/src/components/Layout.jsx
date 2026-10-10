@@ -14,7 +14,8 @@ import {
   LogOut,
   Menu,
   X,
-  Shield
+  Shield,
+  PlusCircle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
   { name: 'Finished Goods & Dispatch', path: '/dispatch', icon: Truck, roles: ['admin', 'store_manager'] },
   { name: 'Workers & Wages', path: '/workers', icon: Users, roles: ['admin', 'accounts'] },
   { name: 'Cost & Finance', path: '/finance', icon: DollarSign, roles: ['admin', 'accounts'] },
+  { name: 'Place Order', path: '/place-order', icon: PlusCircle, roles: ['buyer'] },
   { name: 'My Orders', path: '/my-orders', icon: ShoppingCart, roles: ['buyer'] },
   { name: 'User Management', path: '/users', icon: UserCheck, roles: ['admin'] },
 ];

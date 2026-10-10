@@ -21,7 +21,7 @@ class MachineResponse(MachineBase):
     model_config = ConfigDict(from_attributes=True)
 
 class ProductionBatchCreate(BaseModel):
-    order_id: int
+    order_id: Optional[int] = None
     stage: ProductionStage
     machine_id: int
     shift: ShiftType = ShiftType.morning

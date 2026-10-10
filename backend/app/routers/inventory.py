@@ -17,7 +17,7 @@ router = APIRouter(prefix="/inventory", tags=["inventory"])
 @router.get("/materials", response_model=List[RawMaterialResponse])
 def list_raw_materials(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles("admin", "store_manager"))
+    current_user: User = Depends(require_roles("admin", "store_manager", "accounts"))
 ):
     """List all raw materials with computed low-stock indicators."""
     materials = db.query(RawMaterial).order_by(RawMaterial.yarn_type.asc()).all()
@@ -81,7 +81,7 @@ def create_supplier(
 def list_stock_movements(
     limit: int = 50,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles("admin", "store_manager"))
+    current_user: User = Depends(require_roles("admin", "store_manager", "accounts"))
 ):
     """Retrieve audit history of stock receipts and consumption movements."""
     movements = (
@@ -163,7 +163,7 @@ def record_stock_movement(
 @router.get("/alerts", response_model=List[InventoryAlertResponse])
 def get_low_stock_alerts(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles("admin", "store_manager"))
+    current_user: User = Depends(require_roles("admin", "store_manager", "accounts"))
 ):
     """Return all raw materials that have fallen at or below their reorder threshold."""
     materials = db.query(RawMaterial).filter(RawMaterial.quantity_on_hand <= RawMaterial.reorder_threshold).all()

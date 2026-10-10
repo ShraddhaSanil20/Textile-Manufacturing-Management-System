@@ -250,7 +250,7 @@ export default function Dashboard() {
             </div>
           </div>
           <Link
-            to="/inventory"
+            to={user?.role === 'accounts' ? "/finance?tab=inventory" : "/inventory"}
             className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg text-xs flex items-center gap-1.5 transition-colors shrink-0 shadow-sm"
           >
             <span>View Inventory Ledger</span>

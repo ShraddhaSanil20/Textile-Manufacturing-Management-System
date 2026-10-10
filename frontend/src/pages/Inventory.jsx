@@ -390,9 +390,12 @@ export default function Inventory() {
       {/* Modal 1: Add New Material */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-base font-bold text-slate-900">Add Raw Material Specification</h3>
+          <div className="relative bg-white border border-slate-200 rounded-2xl max-w-md w-full shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 shrink-0">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Add Raw Material Specification</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Register a yarn variety into the mill's central inventory.</p>
+              </div>
               <button
                 onClick={() => setShowAddModal(false)}
                 className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
@@ -400,79 +403,80 @@ export default function Inventory() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-xs text-slate-500 mb-4">Register a yarn variety into the mill's central inventory.</p>
 
             {formError && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
+              <div className="mx-6 mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
                 {formError}
               </div>
             )}
 
-            <form onSubmit={handleCreateMaterial} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Yarn Type / Count</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Cotton 40s Combed, Linen 20s"
-                  value={newMaterial.yarn_type}
-                  onChange={(e) => setNewMaterial({ ...newMaterial, yarn_type: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleCreateMaterial} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-6 overflow-y-auto space-y-3.5 flex-1">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Colour / Shade</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Yarn Type / Count</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Navy Blue, Raw White"
-                    value={newMaterial.colour}
-                    onChange={(e) => setNewMaterial({ ...newMaterial, colour: e.target.value })}
+                    placeholder="e.g. Cotton 40s Combed, Linen 20s"
+                    value={newMaterial.yarn_type}
+                    onChange={(e) => setNewMaterial({ ...newMaterial, yarn_type: e.target.value })}
                     className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Unit of Measure</label>
-                  <input
-                    type="text"
-                    required
-                    value={newMaterial.unit}
-                    onChange={(e) => setNewMaterial({ ...newMaterial, unit: e.target.value })}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Colour / Shade</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Navy Blue, Raw White"
+                      value={newMaterial.colour}
+                      onChange={(e) => setNewMaterial({ ...newMaterial, colour: e.target.value })}
+                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Unit of Measure</label>
+                    <input
+                      type="text"
+                      required
+                      value={newMaterial.unit}
+                      onChange={(e) => setNewMaterial({ ...newMaterial, unit: e.target.value })}
+                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Initial Quantity ({newMaterial.unit})</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      required
+                      value={newMaterial.quantity_on_hand}
+                      onChange={(e) => setNewMaterial({ ...newMaterial, quantity_on_hand: e.target.value })}
+                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Reorder Threshold ({newMaterial.unit})</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      required
+                      value={newMaterial.reorder_threshold}
+                      onChange={(e) => setNewMaterial({ ...newMaterial, reorder_threshold: e.target.value })}
+                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Initial Quantity ({newMaterial.unit})</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    required
-                    value={newMaterial.quantity_on_hand}
-                    onChange={(e) => setNewMaterial({ ...newMaterial, quantity_on_hand: e.target.value })}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Reorder Threshold ({newMaterial.unit})</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    required
-                    value={newMaterial.reorder_threshold}
-                    onChange={(e) => setNewMaterial({ ...newMaterial, reorder_threshold: e.target.value })}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+              <div className="sticky bottom-0 bg-white px-6 py-3 border-t border-slate-200 flex justify-end gap-2.5 z-10 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
@@ -481,12 +485,13 @@ export default function Inventory() {
                   Cancel
                 </button>
                 <button
+                  id="submit-material-btn"
                   type="submit"
                   disabled={formSubmitting}
-                  className="px-4 py-2 text-xs font-semibold bg-primary-navy hover:bg-secondary-navy text-white rounded-lg shadow-sm flex items-center gap-1.5 transition disabled:opacity-50"
+                  className="px-5 py-2.5 text-xs font-bold bg-[#142B4A] hover:bg-slate-900 text-white rounded-lg shadow-md flex items-center gap-1.5 transition disabled:opacity-50"
                 >
                   {formSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  Register Material
+                  Submit Material Registration
                 </button>
               </div>
             </form>
@@ -497,11 +502,17 @@ export default function Inventory() {
       {/* Modal 2: Record Movement */}
       {showMoveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-base font-bold text-slate-900">
-                Record Stock {movementForm.movement_type === 'received' ? 'Receipt' : 'Issue / Consumption'}
-              </h3>
+          <div className="relative bg-white border border-slate-200 rounded-2xl max-w-md w-full shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 shrink-0">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Record Stock {movementForm.movement_type === 'received' ? 'Receipt' : 'Issue / Consumption'}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Material: <span className="text-slate-900 font-bold">{selectedMaterial?.yarn_type} ({selectedMaterial?.colour})</span>
+                  {' '}• Available: <span className="font-mono text-teal-700 font-bold">{selectedMaterial?.quantity_on_hand} {selectedMaterial?.unit}</span>
+                </p>
+              </div>
               <button
                 onClick={() => setShowMoveModal(false)}
                 className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
@@ -509,93 +520,90 @@ export default function Inventory() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-xs text-slate-500 mb-4">
-              Material: <span className="text-slate-900 font-bold">{selectedMaterial?.yarn_type} ({selectedMaterial?.colour})</span>
-              <br />
-              Current Available Balance: <span className="font-mono text-teal-700 font-bold">{selectedMaterial?.quantity_on_hand} {selectedMaterial?.unit}</span>
-            </p>
 
             {formError && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
+              <div className="mx-6 mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
                 {formError}
               </div>
             )}
 
-            <form onSubmit={handleRecordMovement} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Movement Type</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setMovementForm({ ...movementForm, movement_type: 'received' })}
-                    className={`py-2 px-3 text-xs font-semibold rounded-lg border transition ${
-                      movementForm.movement_type === 'received'
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold'
-                        : 'bg-slate-50 text-slate-600 border-slate-200'
-                    }`}
-                  >
-                    + Stock Received
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMovementForm({ ...movementForm, movement_type: 'consumed' })}
-                    className={`py-2 px-3 text-xs font-semibold rounded-lg border transition ${
-                      movementForm.movement_type === 'consumed'
-                        ? 'bg-amber-50 text-amber-800 border-amber-300 font-bold'
-                        : 'bg-slate-50 text-slate-600 border-slate-200'
-                    }`}
-                  >
-                    - Stock Consumed / Issued
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Quantity ({selectedMaterial?.unit || 'kg'})
-                </label>
-                <input
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  required
-                  placeholder="Enter quantity"
-                  value={movementForm.quantity}
-                  onChange={(e) => setMovementForm({ ...movementForm, quantity: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                />
-              </div>
-
-              {movementForm.movement_type === 'received' && (
+            <form onSubmit={handleRecordMovement} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-6 overflow-y-auto space-y-3.5 flex-1">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Supplier / Vendor</label>
-                  <select
-                    value={movementForm.supplier_id}
-                    onChange={(e) => setMovementForm({ ...movementForm, supplier_id: e.target.value })}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  >
-                    <option value="">-- Select Supplier (Optional) --</option>
-                    {suppliers.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Movement Type</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setMovementForm({ ...movementForm, movement_type: 'received' })}
+                      className={`py-2 px-3 text-xs font-semibold rounded-lg border transition ${
+                        movementForm.movement_type === 'received'
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold'
+                          : 'bg-slate-50 text-slate-600 border-slate-200'
+                      }`}
+                    >
+                      + Stock Received
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMovementForm({ ...movementForm, movement_type: 'consumed' })}
+                      className={`py-2 px-3 text-xs font-semibold rounded-lg border transition ${
+                        movementForm.movement_type === 'consumed'
+                          ? 'bg-amber-50 text-amber-800 border-amber-300 font-bold'
+                          : 'bg-slate-50 text-slate-600 border-slate-200'
+                      }`}
+                    >
+                      - Stock Consumed / Issued
+                    </button>
+                  </div>
                 </div>
-              )}
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Notes / Slip Reference</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Delivery Challan #882 / Issued to Loom SF-01"
-                  value={movementForm.notes}
-                  onChange={(e) => setMovementForm({ ...movementForm, notes: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                />
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Quantity ({selectedMaterial?.unit || 'kg'})
+                  </label>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    required
+                    placeholder="Enter quantity"
+                    value={movementForm.quantity}
+                    onChange={(e) => setMovementForm({ ...movementForm, quantity: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+
+                {movementForm.movement_type === 'received' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Supplier / Vendor</label>
+                    <select
+                      value={movementForm.supplier_id}
+                      onChange={(e) => setMovementForm({ ...movementForm, supplier_id: e.target.value })}
+                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    >
+                      <option value="">-- Select Supplier (Optional) --</option>
+                      {suppliers.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Notes / Slip Reference</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Delivery Challan #882 / Issued to Loom SF-01"
+                    value={movementForm.notes}
+                    onChange={(e) => setMovementForm({ ...movementForm, notes: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+              <div className="sticky bottom-0 bg-white px-6 py-3 border-t border-slate-200 flex justify-end gap-2.5 z-10 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowMoveModal(false)}
@@ -604,12 +612,13 @@ export default function Inventory() {
                   Cancel
                 </button>
                 <button
+                  id="submit-movement-btn"
                   type="submit"
                   disabled={formSubmitting}
-                  className="px-4 py-2 text-xs font-semibold bg-primary-navy hover:bg-secondary-navy text-white rounded-lg shadow-sm flex items-center gap-1.5 transition disabled:opacity-50"
+                  className="px-5 py-2.5 text-xs font-bold bg-[#142B4A] hover:bg-slate-900 text-white rounded-lg shadow-md flex items-center gap-1.5 transition disabled:opacity-50"
                 >
                   {formSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  Confirm Movement
+                  Submit Stock Movement
                 </button>
               </div>
             </form>

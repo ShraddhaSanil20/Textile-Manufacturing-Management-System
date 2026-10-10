@@ -131,10 +131,19 @@ export default function App() {
             />
 
             <Route
+              path="/place-order"
+              element={
+                <RoleRoute allowedRoles={['buyer']}>
+                  <BuyerOrders initialView="place_order" />
+                </RoleRoute>
+              }
+            />
+
+            <Route
               path="/my-orders"
               element={
                 <RoleRoute allowedRoles={['buyer']}>
-                  <BuyerOrders />
+                  <BuyerOrders initialView="my_orders" />
                 </RoleRoute>
               }
             />

@@ -43,7 +43,7 @@ def list_orders(
     - If user is 'admin' or 'store_manager', returns all customer orders.
     """
     role = current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)
-    if role not in ["admin", "store_manager", "buyer", "accounts"]:
+    if role not in ["admin", "store_manager", "buyer", "accounts", "production_operator"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to view customer orders."

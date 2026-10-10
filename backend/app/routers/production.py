@@ -110,9 +110,17 @@ def create_batch(
     Assign an order to a machine for a production stage (spinning, weaving, dyeing).
     Sets machine to 'running' and updates order to 'in_production'.
     """
-    order = db.query(CustomerOrder).filter(CustomerOrder.id == batch_in.order_id).first()
+    if batch_in.order_id:
+        order = db.query(CustomerOrder).filter(CustomerOrder.id == batch_in.order_id).first()
+    else:
+        order = db.query(CustomerOrder).filter(
+            CustomerOrder.status.in_([OrderStatus.created, OrderStatus.material_check, OrderStatus.in_production])
+        ).order_by(CustomerOrder.id.desc()).first()
+        if not order:
+            order = db.query(CustomerOrder).first()
+
     if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
+        raise HTTPException(status_code=404, detail="No active customer order found to assign.")
 
     machine = db.query(Machine).filter(Machine.id == batch_in.machine_id).first()
     if not machine:

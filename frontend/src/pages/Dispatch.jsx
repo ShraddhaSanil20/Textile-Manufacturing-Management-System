@@ -400,14 +400,15 @@ export default function Dispatch() {
                   <button
                     type="submit"
                     disabled={submitting || selectedRollIds.length === 0}
-                    className="w-full py-2.5 bg-primary-navy hover:bg-secondary-navy disabled:opacity-50 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition-all"
+                    className="w-full py-3 bg-primary-navy hover:bg-secondary-navy disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all"
+                    id="submit-dispatch-rolls-btn"
                   >
                     {submitting ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <Truck className="w-4 h-4" />
                     )}
-                    <span>Dispatch Fabric Rolls</span>
+                    <span>Submit & Dispatch Fabric Rolls</span>
                   </button>
                 </form>
               ) : (
@@ -506,60 +507,66 @@ export default function Dispatch() {
         </div>
       )}
 
-      {/* Delivery Challan Modal */}
+      {/* Delivery Challan Modal (Optimized 1-Page Printable Receipt) */}
       {showChallanModal && currentChallan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl p-6 sm:p-8 space-y-6 shadow-2xl text-slate-800">
+        <div className="fixed inset-0 z-50 overflow-y-auto flex min-h-full items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div
+            id="delivery-challan-receipt"
+            className="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl p-6 space-y-4 shadow-2xl text-slate-800 flex flex-col max-h-[92vh] overflow-y-auto"
+          >
             {/* Header Letterhead */}
-            <div className="flex justify-between items-start border-b border-slate-200 pb-5">
+            <div className="flex justify-between items-start border-b border-slate-200 pb-3">
               <div>
-                <h2 className="text-xl font-black text-primary-navy uppercase tracking-wider">
-                  Everest Textile Mills
+                <h2 className="text-lg font-black text-primary-navy uppercase tracking-wider">
+                  Everest Textile Mills Ltd.
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Industrial Area Phase II, Mill Road • Quality Fabric Manufacturing
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Industrial Area Phase II, Mill Road • ISO 9001:2015 Certified Textile Mill
                 </p>
-                <div className="inline-block mt-2 px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200 text-xs font-bold uppercase tracking-wider">
-                  Outward Delivery Challan
+                <div className="inline-block mt-1.5 px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200 text-[10px] font-bold uppercase tracking-wider">
+                  Official Outward Delivery Challan
                 </div>
               </div>
               <div className="text-right">
                 <div className="font-mono text-sm font-bold text-slate-900">{currentChallan.dispatch_number}</div>
-                <div className="text-xs text-slate-500 mt-1">Invoice: <span className="font-mono font-bold text-slate-800">{currentChallan.invoice_number}</span></div>
-                <div className="text-xs text-slate-500">Date: {new Date(currentChallan.dispatch_date).toLocaleDateString()}</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Invoice: <span className="font-mono font-bold text-slate-800">{currentChallan.invoice_number}</span></div>
+                <div className="text-[11px] text-slate-500">Date: {new Date(currentChallan.dispatch_date).toLocaleDateString()}</div>
               </div>
             </div>
 
-            {/* Recipient Details */}
-            <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+            {/* Recipient & Order Reference Details */}
+            <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
               <div>
-                <span className="text-slate-500 uppercase font-semibold">Consignee / Buyer:</span>
-                <div className="text-sm font-bold text-slate-900 mt-1">{currentChallan.buyer_name}</div>
+                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Consignee / Buyer</span>
+                <div className="text-xs font-bold text-slate-900 mt-0.5">{currentChallan.buyer_name}</div>
               </div>
               <div>
-                <span className="text-slate-500 uppercase font-semibold">Customer Order Reference:</span>
-                <div className="font-mono text-sm font-bold text-teal-700 mt-1">{currentChallan.order_number}</div>
+                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Customer Order Ref</span>
+                <div className="font-mono text-xs font-bold text-teal-700 mt-0.5">{currentChallan.order_number}</div>
               </div>
             </div>
 
-            {/* Itemized Rolls */}
+            {/* Itemized Rolls Manifest */}
             <div>
-              <h4 className="text-xs font-bold uppercase text-slate-600 mb-2">Dispatched Roll Manifest</h4>
-              <div className="border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+              <div className="flex justify-between items-center mb-1.5">
+                <h4 className="text-[11px] font-bold uppercase text-slate-600">Dispatched Roll Manifest</h4>
+                <span className="text-[10px] font-semibold text-slate-400">{currentChallan.items.length} Serialized Roll(s)</span>
+              </div>
+              <div className="border border-slate-200 rounded-lg overflow-hidden max-h-40 overflow-y-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                  <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 text-[11px]">
                     <tr>
-                      <th className="py-2.5 px-3">#</th>
-                      <th className="py-2.5 px-3">Roll Serial Number</th>
-                      <th className="py-2.5 px-3 text-right">Length (Metres)</th>
+                      <th className="py-1.5 px-3">#</th>
+                      <th className="py-1.5 px-3">Roll Serial Number</th>
+                      <th className="py-1.5 px-3 text-right">Length (Metres)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {currentChallan.items.map((it, idx) => (
                       <tr key={it.id || idx}>
-                        <td className="py-2 px-3 text-slate-400">{idx + 1}</td>
-                        <td className="py-2 px-3 font-mono font-medium text-slate-900">{it.roll_number}</td>
-                        <td className="py-2 px-3 text-right font-bold text-slate-900 font-mono">{it.metres} m</td>
+                        <td className="py-1.5 px-3 text-slate-400 text-[11px]">{idx + 1}</td>
+                        <td className="py-1.5 px-3 font-mono font-medium text-slate-900 text-[11px]">{it.roll_number}</td>
+                        <td className="py-1.5 px-3 text-right font-bold text-slate-900 font-mono text-[11px]">{it.metres} m</td>
                       </tr>
                     ))}
                   </tbody>
@@ -567,26 +574,39 @@ export default function Dispatch() {
               </div>
             </div>
 
-            {/* Total Footer */}
-            <div className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-200">
-              <span className="text-sm font-bold text-slate-700 uppercase">Total Net Metres Dispatched:</span>
-              <span className="text-xl font-black text-primary-navy font-mono">{currentChallan.total_metres.toLocaleString()} m</span>
+            {/* Total Footer Summary */}
+            <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <span className="text-xs font-bold text-slate-700 uppercase">Total Net Metres Dispatched:</span>
+              <span className="text-lg font-black text-primary-navy font-mono">{currentChallan.total_metres.toLocaleString()} m</span>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex justify-between items-center pt-2">
+            {/* Official Signatures & Verification Block (Print Ready) */}
+            <div className="grid grid-cols-2 gap-6 pt-4 border-t border-slate-200 text-xs">
+              <div className="text-center pt-6 border-t border-slate-300 border-dashed">
+                <span className="text-[11px] font-semibold text-slate-600">Authorized Mill Store Incharge</span>
+                <p className="text-[10px] text-slate-400 mt-0.5">Everest Textile Mills Ltd.</p>
+              </div>
+              <div className="text-center pt-6 border-t border-slate-300 border-dashed">
+                <span className="text-[11px] font-semibold text-slate-600">Consignee Acceptance Signature</span>
+                <p className="text-[10px] text-slate-400 mt-0.5">Received in sound condition</p>
+              </div>
+            </div>
+
+            {/* Action Buttons (Hidden during printing) */}
+            <div className="no-print flex justify-between items-center pt-3 border-t border-slate-200 shrink-0">
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-2 border border-slate-200"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-2 border border-slate-200 transition"
+                id="print-challan-btn"
               >
                 <Printer className="w-3.5 h-3.5" />
-                <span>Print Challan</span>
+                <span>Print Single-Page Challan</span>
               </button>
               <button
                 type="button"
                 onClick={() => setShowChallanModal(false)}
-                className="px-5 py-2 bg-primary-navy hover:bg-secondary-navy text-white rounded-lg text-xs font-semibold"
+                className="px-5 py-2 bg-primary-navy hover:bg-secondary-navy text-white rounded-lg text-xs font-bold shadow-xs transition"
               >
                 Close
               </button>

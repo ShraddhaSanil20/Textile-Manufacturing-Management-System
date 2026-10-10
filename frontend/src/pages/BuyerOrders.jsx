@@ -19,6 +19,8 @@ import {
   X
 } from 'lucide-react';
 
+import { useLocation, useNavigate } from 'react-router-dom';
+
 const STAGE_STEPS = [
   { key: 'created', label: 'Order Placed' },
   { key: 'material_check', label: 'Yarn Allocated' },
@@ -28,8 +30,21 @@ const STAGE_STEPS = [
   { key: 'completed', label: 'Delivered' },
 ];
 
-export default function BuyerOrders() {
+export default function BuyerOrders({ initialView = 'my_orders' }) {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const isPlaceOrderRoute = location.pathname === '/place-order' || initialView === 'place_order';
+  const [activeTab, setActiveTab] = useState(isPlaceOrderRoute ? 'place_order' : 'my_orders');
+
+  useEffect(() => {
+    if (location.pathname === '/place-order') {
+      setActiveTab('place_order');
+    } else if (location.pathname === '/my-orders') {
+      setActiveTab('my_orders');
+    }
+  }, [location.pathname]);
 
   const [orders, setOrders] = useState([]);
   const [dispatches, setDispatches] = useState([]);
@@ -145,10 +160,11 @@ export default function BuyerOrders() {
               setErrorMsg('');
               setShowOrderModal(true);
             }}
-            className="px-4 py-2 bg-primary-navy hover:bg-secondary-navy text-white rounded-lg text-xs font-semibold flex items-center gap-2 shadow-sm transition-all"
+            className="px-4 py-2 bg-primary-navy hover:bg-secondary-navy text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
+            id="buyer-add-order-btn"
           >
             <PlusCircle className="w-4 h-4" />
-            <span>Place Fabric Order</span>
+            <span>Add Order</span>
           </button>
 
           <button
@@ -160,6 +176,41 @@ export default function BuyerOrders() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary-navy' : ''}`} />
           </button>
         </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-slate-200 gap-6">
+        <button
+          onClick={() => {
+            setActiveTab('place_order');
+            navigate('/place-order');
+          }}
+          className={`pb-3 text-xs font-bold flex items-center gap-2 transition-colors border-b-2 -mb-px ${
+            activeTab === 'place_order'
+              ? 'border-primary-navy text-primary-navy'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+          id="tab-place-order"
+        >
+          <PlusCircle className="w-4 h-4" />
+          <span>Place Order</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveTab('my_orders');
+            navigate('/my-orders');
+          }}
+          className={`pb-3 text-xs font-bold flex items-center gap-2 transition-colors border-b-2 -mb-px ${
+            activeTab === 'my_orders'
+              ? 'border-primary-navy text-primary-navy'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+          id="tab-my-orders"
+        >
+          <Package className="w-4 h-4" />
+          <span>My Orders & Tracking ({orders.length})</span>
+        </button>
       </div>
 
       {successMsg && (
@@ -198,19 +249,160 @@ export default function BuyerOrders() {
         </div>
       </div>
 
-      {/* Search Toolbar */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-        <div className="relative w-full max-w-sm">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search my orders, fabric, colour..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-          />
+      {/* TAB 1: PLACE ORDER VIEW */}
+      {activeTab === 'place_order' && (
+        <div className="space-y-6">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-5 border-b border-slate-100">
+              <div>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200 uppercase tracking-wider">
+                  New Order Placement
+                </span>
+                <h2 className="text-xl font-bold text-slate-900 mt-1.5">Place Order for Mill Production</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Configure custom yarn weaving and dyeing specs. Your contract will be verified by the Everest Mills production team.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setErrorMsg('');
+                  setShowOrderModal(true);
+                }}
+                className="px-4 py-2 bg-primary-navy hover:bg-secondary-navy text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
+                id="place-order-section-add-order-btn"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Add Order (Modal View)</span>
+              </button>
+            </div>
+
+            {errorMsg && (
+              <div className="mt-4 p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-medium">
+                {errorMsg}
+              </div>
+            )}
+
+            <form onSubmit={handlePlaceOrder} className="mt-6 space-y-5 max-w-2xl">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Fabric Type & Construction Specification *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 100% Combed Cotton Poplin 40s (130 GSM)"
+                  value={orderForm.fabric_type}
+                  onChange={(e) => setOrderForm({ ...orderForm, fabric_type: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 shadow-2xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Colour / Pantone Shade *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Royal Navy Blue (PANTONE 19-4024)"
+                    value={orderForm.colour}
+                    onChange={(e) => setOrderForm({ ...orderForm, colour: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 shadow-2xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Required Quantity (Metres) *</label>
+                  <input
+                    type="number"
+                    step="10"
+                    min="100"
+                    required
+                    placeholder="e.g. 1000"
+                    value={orderForm.quantity_metres}
+                    onChange={(e) => setOrderForm({ ...orderForm, quantity_metres: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 font-mono shadow-2xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Target Delivery Due Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={orderForm.due_date}
+                    onChange={(e) => setOrderForm({ ...orderForm, due_date: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 shadow-2xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Commercial Unit Price ($ / Metre) *</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="1"
+                    required
+                    value={orderForm.unit_price}
+                    onChange={(e) => setOrderForm({ ...orderForm, unit_price: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 font-mono shadow-2xs"
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
+                <span className="text-slate-600 font-medium">Estimated Total Contract Value:</span>
+                <span className="text-base font-black text-primary-navy font-mono">
+                  ${((parseFloat(orderForm.quantity_metres) || 0) * (parseFloat(orderForm.unit_price) || 0)).toLocaleString()} USD
+                </span>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-6 py-3 bg-primary-navy hover:bg-secondary-navy text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+                  id="submit-place-order-btn"
+                >
+                  {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <PlusCircle className="w-4 h-4" />
+                  <span>Submit & Add Order</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* TAB 2: MY ORDERS & REAL-TIME TRACKING */}
+      {activeTab === 'my_orders' && (
+        <div className="space-y-6">
+          {/* Search Toolbar */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div className="relative w-full max-w-sm">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search my orders, fabric, colour..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+              />
+            </div>
+
+            <button
+              onClick={() => {
+                setErrorMsg('');
+                setShowOrderModal(true);
+              }}
+              className="px-3.5 py-2 bg-primary-navy hover:bg-secondary-navy text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-xs transition"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Add Order</span>
+            </button>
+          </div>
 
       {/* Orders List with Progress Stepper */}
       <div className="space-y-4">
@@ -333,114 +525,125 @@ export default function BuyerOrders() {
                 )}
               </div>
             );
-          })
-        )}
+          }))}
+        </div>
       </div>
+    )}
 
-      {/* Place Fabric Order Modal */}
+      {/* Place Fabric Order Modal (Scrollable with Sticky Footer) */}
       {showOrderModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <PlusCircle className="w-5 h-5 text-primary-navy" />
-                <span>Place New Manufacturing Contract</span>
-              </h3>
-              <button onClick={() => setShowOrderModal(false)} className="text-slate-400 hover:text-slate-600 p-1">
-                <X className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 overflow-y-auto flex min-h-full items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-slate-200 flex justify-between items-start shrink-0">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
+                  New Manufacturing Contract
+                </span>
+                <h3 className="text-lg font-bold text-slate-900 mt-1">Add Order</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Configure fabric specification & delivery deadline.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowOrderModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             {errorMsg && (
-              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-medium">
+              <div className="m-6 mb-0 p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-medium">
                 {errorMsg}
               </div>
             )}
 
-            <form onSubmit={handlePlaceOrder} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Fabric Type / Construction *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Royal Blue Cotton Poplin 40s"
-                  value={orderForm.fabric_type}
-                  onChange={(e) => setOrderForm({ ...orderForm, fabric_type: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Colour / Shade *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Royal Blue"
-                  value={orderForm.colour}
-                  onChange={(e) => setOrderForm({ ...orderForm, colour: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handlePlaceOrder} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-6 overflow-y-auto flex-1 space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Quantity (Metres) *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Fabric Construction Spec *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Royal Blue Cotton Poplin 40s"
+                    value={orderForm.fabric_type}
+                    onChange={(e) => setOrderForm({ ...orderForm, fabric_type: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Colour / Shade *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Royal Blue"
+                    value={orderForm.colour}
+                    onChange={(e) => setOrderForm({ ...orderForm, colour: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Quantity (Metres) *</label>
+                    <input
+                      type="number"
+                      step="10"
+                      min="100"
+                      required
+                      placeholder="e.g. 1000"
+                      value={orderForm.quantity_metres}
+                      onChange={(e) => setOrderForm({ ...orderForm, quantity_metres: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Target Delivery Date *</label>
+                    <input
+                      type="date"
+                      required
+                      value={orderForm.due_date}
+                      onChange={(e) => setOrderForm({ ...orderForm, due_date: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Unit Price ($ / Metre)</label>
                   <input
                     type="number"
-                    step="10"
-                    min="100"
+                    step="0.1"
+                    min="1"
                     required
-                    placeholder="e.g. 1000"
-                    value={orderForm.quantity_metres}
-                    onChange={(e) => setOrderForm({ ...orderForm, quantity_metres: e.target.value })}
+                    value={orderForm.unit_price}
+                    onChange={(e) => setOrderForm({ ...orderForm, unit_price: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 font-mono"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Target Delivery Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={orderForm.due_date}
-                    onChange={(e) => setOrderForm({ ...orderForm, due_date: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600">
+                  Total Contract Estimate: <strong className="text-slate-900 font-mono">${((parseFloat(orderForm.quantity_metres) || 0) * (parseFloat(orderForm.unit_price) || 0)).toLocaleString()}</strong>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Unit Price ($ / Metre)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="1"
-                  required
-                  value={orderForm.unit_price}
-                  onChange={(e) => setOrderForm({ ...orderForm, unit_price: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 font-mono"
-                />
-              </div>
-
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600">
-                Total Contract Estimate: <strong className="text-slate-900 font-mono">${((parseFloat(orderForm.quantity_metres) || 0) * (parseFloat(orderForm.unit_price) || 0)).toLocaleString()}</strong>
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2.5 border-t border-slate-200">
+              <div className="sticky bottom-0 bg-white px-6 py-4 border-t border-slate-200 flex justify-end gap-3 rounded-b-2xl z-10 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowOrderModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 bg-primary-navy hover:bg-secondary-navy text-white rounded-lg text-xs font-semibold flex items-center gap-2 shadow-sm transition disabled:opacity-50"
+                  className="px-6 py-2.5 bg-primary-navy hover:bg-secondary-navy text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-md transition disabled:opacity-50"
+                  id="modal-submit-add-order-btn"
                 >
                   {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  Submit Contract
+                  <span>Submit & Add Order</span>
                 </button>
               </div>
             </form>

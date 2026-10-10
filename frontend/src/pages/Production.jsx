@@ -107,12 +107,15 @@ export default function Production() {
     setFormError('');
     setSubmitting(true);
     try {
-      await api.post('/production/batches', {
-        order_id: parseInt(batchForm.order_id),
+      const payload = {
         stage: batchForm.stage,
         machine_id: parseInt(batchForm.machine_id),
         shift: batchForm.shift,
-      });
+      };
+      if (batchForm.order_id) {
+        payload.order_id = parseInt(batchForm.order_id);
+      }
+      await api.post('/production/batches', payload);
       setShowAssignBatchModal(false);
       setBatchForm({ order_id: '', stage: 'weaving', machine_id: '', shift: 'morning' });
       setSuccessBanner('Production batch created and machine dispatched to RUNNING.');
@@ -390,88 +393,81 @@ export default function Production() {
 
       {/* Modal 1: Assign Stage Batch */}
       {showAssignBatchModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-base font-bold text-slate-900">Assign Order to Machine Run</h3>
+        <div className="fixed inset-0 z-50 overflow-y-auto flex min-h-full items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-slate-200 flex items-center justify-between shrink-0">
+              <div>
+                <span className="text-[11px] font-bold text-teal-700 uppercase tracking-wider">Machine Scheduling</span>
+                <h3 className="text-base font-bold text-slate-900 mt-0.5">Assign Order to Machine Run</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Start a spinning, weaving, or dyeing production batch.</p>
+              </div>
               <button
+                type="button"
                 onClick={() => setShowAssignBatchModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-xs text-slate-500 mb-4">Start a spinning, weaving, or dyeing production batch.</p>
 
             {formError && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
+              <div className="m-6 mb-0 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
                 {formError}
               </div>
             )}
 
-            <form onSubmit={handleAssignBatch} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Customer Order</label>
-                <select
-                  required
-                  value={batchForm.order_id}
-                  onChange={(e) => setBatchForm({ ...batchForm, order_id: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                >
-                  <option value="">-- Select Order --</option>
-                  {orders.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.order_number} — {o.fabric_type} ({o.quantity_metres}m)
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <form onSubmit={handleAssignBatch} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-6 overflow-y-auto flex-1 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Production Stage *</label>
+                    <select
+                      value={batchForm.stage}
+                      onChange={(e) => setBatchForm({ ...batchForm, stage: e.target.value })}
+                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    >
+                      <option value="spinning">Spinning</option>
+                      <option value="weaving">Weaving</option>
+                      <option value="dyeing">Dyeing</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Working Shift *</label>
+                    <select
+                      value={batchForm.shift}
+                      onChange={(e) => setBatchForm({ ...batchForm, shift: e.target.value })}
+                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    >
+                      <option value="morning">Morning Shift</option>
+                      <option value="evening">Evening Shift</option>
+                      <option value="night">Night Shift</option>
+                    </select>
+                  </div>
+                </div>
 
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Production Stage</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Target Production Machine *</label>
                   <select
-                    value={batchForm.stage}
-                    onChange={(e) => setBatchForm({ ...batchForm, stage: e.target.value })}
+                    required
+                    value={batchForm.machine_id}
+                    onChange={(e) => setBatchForm({ ...batchForm, machine_id: e.target.value })}
                     className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
                   >
-                    <option value="spinning">Spinning</option>
-                    <option value="weaving">Weaving</option>
-                    <option value="dyeing">Dyeing</option>
+                    <option value="">-- Select Machine Fleet --</option>
+                    {machines.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} ({m.type.toUpperCase()}) — [{m.status.toUpperCase()}]
+                      </option>
+                    ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Working Shift</label>
-                  <select
-                    value={batchForm.shift}
-                    onChange={(e) => setBatchForm({ ...batchForm, shift: e.target.value })}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  >
-                    <option value="morning">Morning Shift</option>
-                    <option value="evening">Evening Shift</option>
-                    <option value="night">Night Shift</option>
-                  </select>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600">
+                  <span className="font-semibold text-slate-800">Auto-Assigned Routing:</span> Active order requirements will automatically allocate to this machine run and advance production status.
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Assign Machine</label>
-                <select
-                  required
-                  value={batchForm.machine_id}
-                  onChange={(e) => setBatchForm({ ...batchForm, machine_id: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                >
-                  <option value="">-- Select Machine --</option>
-                  {machines.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name} ({m.type.toUpperCase()}) — [{m.status.toUpperCase()}]
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+              <div className="sticky bottom-0 bg-white px-6 py-4 border-t border-slate-200 flex justify-end gap-3 rounded-b-2xl z-10 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowAssignBatchModal(false)}
@@ -482,10 +478,11 @@ export default function Production() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 text-xs font-semibold bg-primary-navy hover:bg-secondary-navy text-white rounded-lg shadow-sm flex items-center gap-1.5 transition disabled:opacity-50"
+                  className="px-5 py-2 text-xs font-bold bg-primary-navy hover:bg-secondary-navy text-white rounded-lg shadow-md flex items-center gap-1.5 transition disabled:opacity-50"
+                  id="submit-assign-batch-btn"
                 >
                   {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  Dispatch Batch Run
+                  <span>Submit & Dispatch Batch Run</span>
                 </button>
               </div>
             </form>
@@ -495,78 +492,84 @@ export default function Production() {
 
       {/* Modal 2: Log Output and Downtime */}
       {showOutputModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-base font-bold text-slate-900">Log Shift Output & Machine Downtime</h3>
+        <div className="fixed inset-0 z-50 overflow-y-auto flex min-h-full items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-slate-200 flex items-center justify-between shrink-0">
+              <div>
+                <span className="text-[11px] font-bold text-teal-700 uppercase tracking-wider">Shift Logging</span>
+                <h3 className="text-base font-bold text-slate-900 mt-0.5">Log Shift Output & Downtime</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Batch: <span className="font-mono text-primary-navy font-bold">{selectedBatch?.batch_number}</span>
+                </p>
+              </div>
               <button
+                type="button"
                 onClick={() => setShowOutputModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-xs text-slate-500 mb-4">
-              Batch: <span className="font-mono text-primary-navy font-bold">{selectedBatch?.batch_number}</span>
-            </p>
 
             {formError && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
+              <div className="m-6 mb-0 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
                 {formError}
               </div>
             )}
 
-            <form onSubmit={handleRecordOutput} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Fabric Metres Output</label>
-                <input
-                  type="number"
-                  min="0.1"
-                  step="0.1"
-                  required
-                  placeholder="e.g. 200"
-                  value={outputForm.output_metres}
-                  onChange={(e) => setOutputForm({ ...outputForm, output_metres: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Machine Downtime (Minutes)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  required
-                  value={outputForm.downtime_minutes}
-                  onChange={(e) => setOutputForm({ ...outputForm, downtime_minutes: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                />
-              </div>
-
-              <div className="space-y-2 pt-2">
-                <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+            <form onSubmit={handleRecordOutput} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-6 overflow-y-auto flex-1 space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Fabric Metres Output *</label>
                   <input
-                    type="checkbox"
-                    checked={outputForm.create_fabric_rolls}
-                    onChange={(e) => setOutputForm({ ...outputForm, create_fabric_rolls: e.target.checked })}
-                    className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    required
+                    placeholder="e.g. 200"
+                    value={outputForm.output_metres}
+                    onChange={(e) => setOutputForm({ ...outputForm, output_metres: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
                   />
-                  <span>Automatically generate serialized fabric rolls for quality inspection (100m units)</span>
-                </label>
+                </div>
 
-                <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Machine Downtime (Minutes) *</label>
                   <input
-                    type="checkbox"
-                    checked={outputForm.mark_completed}
-                    onChange={(e) => setOutputForm({ ...outputForm, mark_completed: e.target.checked })}
-                    className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                    type="number"
+                    min="0"
+                    step="1"
+                    required
+                    value={outputForm.downtime_minutes}
+                    onChange={(e) => setOutputForm({ ...outputForm, downtime_minutes: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
                   />
-                  <span>Mark batch as COMPLETED (frees machine back to IDLE)</span>
-                </label>
+                </div>
+
+                <div className="space-y-2 pt-2">
+                  <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={outputForm.create_fabric_rolls}
+                      onChange={(e) => setOutputForm({ ...outputForm, create_fabric_rolls: e.target.checked })}
+                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                    />
+                    <span>Automatically generate serialized fabric rolls for quality inspection (100m units)</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={outputForm.mark_completed}
+                      onChange={(e) => setOutputForm({ ...outputForm, mark_completed: e.target.checked })}
+                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                    />
+                    <span>Mark batch as COMPLETED (frees machine back to IDLE)</span>
+                  </label>
+                </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+              <div className="sticky bottom-0 bg-white px-6 py-4 border-t border-slate-200 flex justify-end gap-3 rounded-b-2xl z-10 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowOutputModal(false)}
@@ -577,10 +580,11 @@ export default function Production() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 text-xs font-semibold bg-primary-navy hover:bg-secondary-navy text-white rounded-lg shadow-sm flex items-center gap-1.5 transition disabled:opacity-50"
+                  className="px-5 py-2 text-xs font-bold bg-primary-navy hover:bg-secondary-navy text-white rounded-lg shadow-md flex items-center gap-1.5 transition disabled:opacity-50"
+                  id="submit-output-btn"
                 >
                   {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  Submit Shift Output
+                  <span>Submit Shift Output</span>
                 </button>
               </div>
             </form>
@@ -590,46 +594,52 @@ export default function Production() {
 
       {/* Modal 3: Add Machine */}
       {showAddMachineModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-base font-bold text-slate-900">Add Machine to Fleet</h3>
+        <div className="fixed inset-0 z-50 overflow-y-auto flex min-h-full items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-slate-200 flex items-center justify-between shrink-0">
+              <div>
+                <span className="text-[11px] font-bold text-teal-700 uppercase tracking-wider">Fleet Setup</span>
+                <h3 className="text-base font-bold text-slate-900 mt-0.5">Add Machine to Fleet</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Register a spinning frame, weaving loom, or dyeing jigger.</p>
+              </div>
               <button
+                type="button"
                 onClick={() => setShowAddMachineModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-xs text-slate-500 mb-4">Register a spinning frame, weaving loom, or dyeing jigger.</p>
 
-            <form onSubmit={handleCreateMachine} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Machine Identification Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Spinning Frame SF-03, Rapier Loom RL-04"
-                  value={newMachine.name}
-                  onChange={(e) => setNewMachine({ ...newMachine, name: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                />
+            <form onSubmit={handleCreateMachine} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-6 overflow-y-auto flex-1 space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Machine Identification Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Spinning Frame SF-03, Rapier Loom RL-04"
+                    value={newMachine.name}
+                    onChange={(e) => setNewMachine({ ...newMachine, name: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Machine Process Type *</label>
+                  <select
+                    value={newMachine.type}
+                    onChange={(e) => setNewMachine({ ...newMachine, type: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  >
+                    <option value="spinning">Spinning</option>
+                    <option value="weaving">Weaving</option>
+                    <option value="dyeing">Dyeing</option>
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Machine Process Type</label>
-                <select
-                  value={newMachine.type}
-                  onChange={(e) => setNewMachine({ ...newMachine, type: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                >
-                  <option value="spinning">Spinning</option>
-                  <option value="weaving">Weaving</option>
-                  <option value="dyeing">Dyeing</option>
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+              <div className="sticky bottom-0 bg-white px-6 py-4 border-t border-slate-200 flex justify-end gap-3 rounded-b-2xl z-10 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowAddMachineModal(false)}
@@ -640,9 +650,11 @@ export default function Production() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 text-xs font-semibold bg-primary-navy hover:bg-secondary-navy text-white rounded-lg shadow-sm transition"
+                  className="px-5 py-2 text-xs font-bold bg-primary-navy hover:bg-secondary-navy text-white rounded-lg shadow-md transition disabled:opacity-50"
+                  id="submit-add-machine-btn"
                 >
-                  Save Machine
+                  {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Submit & Add Machine</span>
                 </button>
               </div>
             </form>
