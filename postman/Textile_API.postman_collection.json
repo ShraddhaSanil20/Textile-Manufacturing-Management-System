@@ -1,0 +1,405 @@
+{
+  "info": {
+    "name": "Textile Manufacturing Management System (Everest Textile Mills)",
+    "description": "Production Postman API collection for hackathon prototype demonstrating complete textile supply chain from yarn to dispatch.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Login - Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.access_token) {",
+                  "    pm.collectionVariables.set('authToken', jsonData.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@everest.test\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Login - Store Manager",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"store@everest.test\",\n  \"password\": \"Store@123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Login - Quality Inspector",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"quality@everest.test\",\n  \"password\": \"Quality@123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Get Current Profile (Me)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        },
+        {
+          "name": "Buyer Self Registration",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newbuyer@fashioncorp.test\",\n  \"password\": \"Buyer@1234\",\n  \"full_name\": \"Fashion Corp Sourcing Manager\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Inventory & Raw Materials",
+      "item": [
+        {
+          "name": "List Raw Materials Ledger",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/inventory/materials", "host": ["{{baseUrl}}"], "path": ["inventory", "materials"] }
+          }
+        },
+        {
+          "name": "Create Raw Material Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"yarn_type\": \"Carded Cotton 20s\",\n  \"colour\": \"Olive Green\",\n  \"quantity_on_hand\": 200.0,\n  \"unit\": \"kg\",\n  \"reorder_threshold\": 100.0\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/inventory/materials", "host": ["{{baseUrl}}"], "path": ["inventory", "materials"] }
+          }
+        },
+        {
+          "name": "Record Stock Movement (Inward / Consumption)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"material_id\": 1,\n  \"movement_type\": \"received\",\n  \"quantity\": 250.0,\n  \"notes\": \"New batch shipment received\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/inventory/movements", "host": ["{{baseUrl}}"], "path": ["inventory", "movements"] }
+          }
+        },
+        {
+          "name": "Low-Stock Alerts Check",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/inventory/alerts", "host": ["{{baseUrl}}"], "path": ["inventory", "alerts"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Customer Orders",
+      "item": [
+        {
+          "name": "List Customer Orders",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/orders", "host": ["{{baseUrl}}"], "path": ["orders"] }
+          }
+        },
+        {
+          "name": "Create Customer Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"buyer_id\": 1,\n  \"fabric_type\": \"Heavy Drill Cotton 240 GSM\",\n  \"colour\": \"Navy Blue\",\n  \"quantity_metres\": 1000.0,\n  \"due_date\": \"2026-11-01T00:00:00Z\",\n  \"unit_price\": 5.80\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/orders", "host": ["{{baseUrl}}"], "path": ["orders"] }
+          }
+        },
+        {
+          "name": "Material Availability Check (Yarn Shortage Checker)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/orders/1/material-check", "host": ["{{baseUrl}}"], "path": ["orders", "1", "material-check"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Production & Machines",
+      "item": [
+        {
+          "name": "List Machine Fleet Status",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/production/machines", "host": ["{{baseUrl}}"], "path": ["production", "machines"] }
+          }
+        },
+        {
+          "name": "Create Production Batch Run",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": 1,\n  \"machine_id\": 2,\n  \"stage\": \"weaving\",\n  \"shift\": \"morning\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/production/batches", "host": ["{{baseUrl}}"], "path": ["production", "batches"] }
+          }
+        },
+        {
+          "name": "Record Shift Output & Auto-Roll Generation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"output_metres\": 300.0,\n  \"downtime_minutes\": 15.0,\n  \"create_fabric_rolls\": true,\n  \"mark_completed\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/production/batches/1/output", "host": ["{{baseUrl}}"], "path": ["production", "batches", "1", "output"] }
+          }
+        },
+        {
+          "name": "Delayed & At-Risk Orders Alert",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/production/delayed-orders", "host": ["{{baseUrl}}"], "path": ["production", "delayed-orders"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Quality Control Workstation",
+      "item": [
+        {
+          "name": "List Rolls for Quality Inspection (with Genealogy)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/quality/rolls", "host": ["{{baseUrl}}"], "path": ["quality", "rolls"] }
+          }
+        },
+        {
+          "name": "Submit Quality Inspection (Four-Point System)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roll_id\": 1,\n  \"result\": \"passed\",\n  \"defect_category\": \"none\",\n  \"notes\": \"Grade A fabric, uniform weft tension\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/quality/inspections", "host": ["{{baseUrl}}"], "path": ["quality", "inspections"] }
+          }
+        },
+        {
+          "name": "Quality Pass Rate & Defect Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/quality/stats", "host": ["{{baseUrl}}"], "path": ["quality", "stats"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Finished Goods & Dispatch",
+      "item": [
+        {
+          "name": "Available Finished Goods (Passed Inspection Only)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/dispatch/finished-goods", "host": ["{{baseUrl}}"], "path": ["dispatch", "finished-goods"] }
+          }
+        },
+        {
+          "name": "Create Outward Dispatch (Delivery Challan)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": 1,\n  \"roll_ids\": [1, 2],\n  \"invoice_number\": \"INV-2026-CHALLAN-01\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/dispatch", "host": ["{{baseUrl}}"], "path": ["dispatch"] }
+          }
+        },
+        {
+          "name": "Dispatch History & Invoices",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/dispatch/history", "host": ["{{baseUrl}}"], "path": ["dispatch", "history"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Workers & Wages",
+      "item": [
+        {
+          "name": "List Worker Roster",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/workers", "host": ["{{baseUrl}}"], "path": ["workers"] }
+          }
+        },
+        {
+          "name": "Log Shift Attendance",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"worker_id\": 1,\n  \"date\": \"2026-10-10T08:00:00Z\",\n  \"shift\": \"morning\",\n  \"hours_worked\": 10.0,\n  \"status\": \"present\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/workers/attendance", "host": ["{{baseUrl}}"], "path": ["workers", "attendance"] }
+          }
+        },
+        {
+          "name": "Calculate Payroll with Overtime",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"period_start\": \"2026-10-01T00:00:00Z\",\n  \"period_end\": \"2026-10-10T23:59:59Z\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/workers/wages/calculate", "host": ["{{baseUrl}}"], "path": ["workers", "wages", "calculate"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Costs & Finance",
+      "item": [
+        {
+          "name": "Order Cost Summaries & Margins",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/finance/order-summaries", "host": ["{{baseUrl}}"], "path": ["finance", "order-summaries"] }
+          }
+        },
+        {
+          "name": "Log Direct Expense",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"dye_chemicals\",\n  \"amount\": 350.0,\n  \"description\": \"Chemical fixative purchase\",\n  \"order_id\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/finance/expenses", "host": ["{{baseUrl}}"], "path": ["finance", "expenses"] }
+          }
+        },
+        {
+          "name": "Record Buyer Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": 1,\n  \"amount\": 2500.0,\n  \"payment_method\": \"bank_transfer\",\n  \"status\": \"received\",\n  \"transaction_reference\": \"HDFC-WIRE-84910\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/finance/payments", "host": ["{{baseUrl}}"], "path": ["finance", "payments"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Executive Dashboard",
+      "item": [
+        {
+          "name": "Executive Operations & Financial Telemetry",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/dashboard/stats", "host": ["{{baseUrl}}"], "path": ["dashboard", "stats"] }
+          }
+        }
+      ]
+    }
+  ]
+}
