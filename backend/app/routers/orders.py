@@ -105,7 +105,13 @@ def create_order(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="buyer_id is required when creating an order as staff."
             )
-        buyer_id = order_in.buyer_id
+        buyer = db.query(Buyer).filter(Buyer.id == order_in.buyer_id).first()
+        if not buyer:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Buyer with ID {order_in.buyer_id} not found."
+            )
+        buyer_id = buyer.id
 
     # Generate sequential unique order number
     count = db.query(CustomerOrder).count()

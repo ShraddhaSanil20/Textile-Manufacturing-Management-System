@@ -7,7 +7,7 @@ from sqlalchemy import func
 from app.db.session import get_db
 from app.core.deps import require_roles
 from app.models.user import User
-from app.models.orders import CustomerOrder
+from app.models.orders import CustomerOrder, Buyer
 from app.models.finance import Expense, Payment, PaymentStatus
 from app.schemas.finance import (
     ExpenseCreate,
@@ -187,6 +187,9 @@ def record_payment(
     buyer_id = payload.buyer_id or ord.buyer_id
     if not buyer_id:
         raise HTTPException(status_code=400, detail="Order does not have a linked buyer")
+    buyer = db.query(Buyer).filter(Buyer.id == buyer_id).first()
+    if not buyer:
+        raise HTTPException(status_code=404, detail="Buyer not found")
 
     payment = Payment(
         order_id=ord.id,

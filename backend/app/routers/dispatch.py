@@ -91,6 +91,9 @@ def create_dispatch(
     if existing_inv:
         raise HTTPException(status_code=400, detail=f"Invoice number '{payload.invoice_number}' already exists.")
 
+    if len(payload.roll_ids) != len(set(payload.roll_ids)):
+        raise HTTPException(status_code=400, detail="Duplicate roll IDs provided in dispatch request")
+
     # Validate rolls
     selected_rolls: List[FabricRoll] = []
     total_metres = 0.0

@@ -187,10 +187,19 @@ def calculate_wages_for_period(
     - Regular hours (up to 8 hrs/shift): standard hourly_wage
     - Overtime hours (> 8 hrs/shift): 1.5x hourly_wage
     """
-    workers_query = db.query(Worker)
+    if payload.period_start > payload.period_end:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="period_start must be before or equal to period_end"
+        )
+
     if payload.worker_id:
-        workers_query = workers_query.filter(Worker.id == payload.worker_id)
-    workers = workers_query.all()
+        target_worker = db.query(Worker).filter(Worker.id == payload.worker_id).first()
+        if not target_worker:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Worker not found")
+        workers = [target_worker]
+    else:
+        workers = db.query(Worker).all()
 
     created_wages = []
 

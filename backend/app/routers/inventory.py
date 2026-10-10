@@ -133,6 +133,14 @@ def record_stock_movement(
     elif movement_in.movement_type == StockMovementType.adjustment:
         material.quantity_on_hand = movement_in.quantity
 
+    if movement_in.supplier_id:
+        supplier = db.query(Supplier).filter(Supplier.id == movement_in.supplier_id).first()
+        if not supplier:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Supplier with ID {movement_in.supplier_id} not found."
+            )
+
     movement = StockMovement(
         material_id=material.id,
         movement_type=movement_in.movement_type,
