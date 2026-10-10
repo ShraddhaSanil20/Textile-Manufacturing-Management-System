@@ -9,32 +9,32 @@ export default function Unauthorized({ requiredRoles = [], userRole = '' }) {
   const landingPath = getRoleLandingPath(user?.role);
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-slate-800 border border-slate-700/80 rounded-2xl p-8 shadow-2xl text-center">
-        <div className="w-16 h-16 bg-rose-500/10 text-rose-400 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-rose-500/20">
+    <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center p-4 antialiased">
+      <div className="max-w-md w-full bg-white border border-slate-200 rounded-2xl p-8 shadow-xl shadow-slate-200/50 text-center">
+        <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-rose-100">
           <ShieldAlert className="w-8 h-8" />
         </div>
-        <span className="text-xs font-semibold px-2.5 py-1 bg-rose-950 text-rose-300 rounded-full border border-rose-800 uppercase tracking-wider">
+        <span className="text-xs font-semibold px-2.5 py-1 bg-rose-50 text-rose-700 rounded-full border border-rose-200 uppercase tracking-wider">
           403 Access Denied
         </span>
-        <h1 className="text-2xl font-bold text-white mt-4 mb-2">Not Authorised</h1>
-        <p className="text-slate-400 text-sm leading-relaxed mb-6">
-          Your current account role <span className="font-semibold text-rose-400 uppercase">({userRole || user?.role || 'Guest'})</span> does not have permission to view this section.
+        <h1 className="text-2xl font-bold text-slate-900 mt-4 mb-2">Not Authorised</h1>
+        <p className="text-slate-600 text-sm leading-relaxed mb-6">
+          Your current account role <span className="font-semibold text-rose-600 uppercase">({userRole || user?.role || 'Guest'})</span> does not have permission to view this section.
         </p>
         
         {requiredRoles.length > 0 && (
-          <div className="bg-slate-900/60 rounded-xl p-3 mb-6 text-xs text-slate-400 border border-slate-800">
-            <span className="font-medium text-slate-300">Authorized roles: </span>
-            {requiredRoles.join(', ')}
+          <div className="bg-slate-50 rounded-xl p-3 mb-6 text-xs text-slate-600 border border-slate-200 text-left">
+            <span className="font-semibold text-slate-700">Authorized roles: </span>
+            <span className="font-mono text-teal-700">{requiredRoles.join(', ')}</span>
           </div>
         )}
 
         <button
           onClick={() => navigate(landingPath, { replace: true })}
-          className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-sky-600 hover:bg-sky-500 text-white font-medium rounded-xl transition shadow-lg shadow-sky-600/20 text-sm"
+          className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-[#142B4A] hover:bg-[#203B5D] text-white font-semibold rounded-xl transition shadow-md shadow-[#142B4A]/20 text-sm"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Return to Your Dashboard
+          <ArrowLeft className="w-4 h-4 text-teal-400" />
+          Return to Your Portal
         </button>
       </div>
     </div>
