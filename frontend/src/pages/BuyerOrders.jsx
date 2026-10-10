@@ -15,7 +15,8 @@ import {
   Calendar,
   DollarSign,
   ChevronRight,
-  FileText
+  FileText,
+  X
 } from 'lucide-react';
 
 const STAGE_STEPS = [
@@ -122,15 +123,19 @@ export default function BuyerOrders() {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+      {/* Top Header Card */}
+      <div className="bg-white border border-slate-200/80 p-6 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-950 text-teal-400 border border-teal-800 uppercase tracking-wider">
-            Consignee Portal
-          </span>
-          <h1 className="text-xl sm:text-2xl font-bold text-white mt-2">Fabric Orders & Real-Time Tracking</h1>
-          <p className="text-xs sm:text-sm text-slate-400">
-            Welcome, <span className="text-white font-medium">{user?.full_name}</span>. Monitor yarn spinning, weaving progress, and live delivery dispatches in real time without phone calls.
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 tracking-wide uppercase">
+              Consignee Portal
+            </span>
+            <span className="text-xs text-slate-400">•</span>
+            <span className="text-xs font-medium text-slate-500">Self-Service Order Tracking</span>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mt-2 tracking-tight">Fabric Orders & Real-Time Tracking</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Welcome, <span className="text-slate-900 font-bold">{user?.full_name}</span>. Monitor yarn spinning, weaving progress, and live delivery dispatches in real time without phone calls.
           </p>
         </div>
 
@@ -140,7 +145,7 @@ export default function BuyerOrders() {
               setErrorMsg('');
               setShowOrderModal(true);
             }}
-            className="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg shadow-sky-500/20 transition-all"
+            className="px-4 py-2 bg-primary-navy hover:bg-secondary-navy text-white rounded-lg text-xs font-semibold flex items-center gap-2 shadow-sm transition-all"
           >
             <PlusCircle className="w-4 h-4" />
             <span>Place Fabric Order</span>
@@ -149,52 +154,52 @@ export default function BuyerOrders() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="p-2.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white"
+            className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 shadow-sm"
             title="Refresh"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary-navy' : ''}`} />
           </button>
         </div>
       </div>
 
       {successMsg && (
-        <div className="p-4 bg-emerald-950/60 border border-emerald-800 text-emerald-300 rounded-xl flex items-center gap-2 text-sm">
-          <CheckCircle2 className="w-5 h-5 shrink-0" />
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center gap-2.5 text-xs font-medium shadow-sm">
+          <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600" />
           <span>{successMsg}</span>
         </div>
       )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-          <span className="text-xs text-slate-400 font-medium">My Orders</span>
-          <div className="text-2xl font-bold text-white mt-1">{orders.length}</div>
-          <div className="text-[11px] text-slate-500 mt-1">Contracts placed</div>
+        <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm">
+          <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">My Orders</span>
+          <div className="text-2xl font-bold text-slate-900 mt-1 font-mono">{orders.length}</div>
+          <div className="text-[11px] text-slate-400 mt-1">Contracts placed</div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-          <span className="text-xs text-sky-400 font-medium">In Production</span>
-          <div className="text-2xl font-bold text-sky-400 mt-1">
+        <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm">
+          <span className="text-xs text-sky-700 font-semibold uppercase tracking-wider">In Production</span>
+          <div className="text-2xl font-bold text-sky-700 mt-1 font-mono">
             {orders.filter((o) => !['dispatched', 'completed'].includes(o.status)).length}
           </div>
-          <div className="text-[11px] text-slate-500 mt-1">Active on mill floor</div>
+          <div className="text-[11px] text-slate-400 mt-1">Active on mill floor</div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-          <span className="text-xs text-indigo-400 font-medium">Total Metres Ordered</span>
-          <div className="text-2xl font-bold text-indigo-400 mt-1">{totalMetresOrdered.toLocaleString()} m</div>
-          <div className="text-[11px] text-slate-500 mt-1">All fabric types</div>
+        <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm">
+          <span className="text-xs text-indigo-700 font-semibold uppercase tracking-wider">Total Metres Ordered</span>
+          <div className="text-2xl font-bold text-indigo-700 mt-1 font-mono">{totalMetresOrdered.toLocaleString()} <span className="font-sans font-normal text-xs text-slate-500">m</span></div>
+          <div className="text-[11px] text-slate-400 mt-1">All fabric types</div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-          <span className="text-xs text-emerald-400 font-medium">Delivered Metres</span>
-          <div className="text-2xl font-bold text-emerald-400 mt-1">{totalMetresDelivered.toLocaleString()} m</div>
-          <div className="text-[11px] text-slate-500 mt-1">{dispatches.length} delivery challans</div>
+        <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm">
+          <span className="text-xs text-emerald-700 font-semibold uppercase tracking-wider">Delivered Metres</span>
+          <div className="text-2xl font-bold text-emerald-700 mt-1 font-mono">{totalMetresDelivered.toLocaleString()} <span className="font-sans font-normal text-xs text-slate-500">m</span></div>
+          <div className="text-[11px] text-slate-400 mt-1">{dispatches.length} delivery challans</div>
         </div>
       </div>
 
       {/* Search Toolbar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
         <div className="relative w-full max-w-sm">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -202,7 +207,7 @@ export default function BuyerOrders() {
             placeholder="Search my orders, fabric, colour..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
           />
         </div>
       </div>
@@ -210,14 +215,14 @@ export default function BuyerOrders() {
       {/* Orders List with Progress Stepper */}
       <div className="space-y-4">
         {loading ? (
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-16 flex justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-sky-500" />
+          <div className="bg-white border border-slate-200 rounded-2xl p-16 flex justify-center shadow-sm">
+            <Loader2 className="w-8 h-8 animate-spin text-primary-navy" />
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-500">
-            <Package className="w-10 h-10 mx-auto text-slate-600 mb-2" />
-            <p>You have not placed any fabric orders yet.</p>
-            <p className="text-xs text-slate-600 mt-1">Click "Place Fabric Order" above to submit your first manufacturing contract.</p>
+          <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-400 shadow-sm">
+            <Package className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+            <p className="font-medium text-slate-600">You have not placed any fabric orders yet.</p>
+            <p className="text-xs text-slate-400 mt-1">Click "Place Fabric Order" above to submit your first manufacturing contract.</p>
           </div>
         ) : (
           filteredOrders.map((ord) => {
@@ -227,24 +232,24 @@ export default function BuyerOrders() {
             return (
               <div
                 key={ord.id}
-                className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl hover:border-slate-700 transition-all"
+                className="bg-white border border-slate-200 rounded-2xl p-6 space-y-6 shadow-sm hover:shadow-md transition-shadow"
               >
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-slate-800">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-slate-100">
                   <div>
                     <div className="flex items-center gap-2.5">
-                      <span className="font-mono text-lg font-bold text-white">{ord.order_number}</span>
-                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-sky-400 font-mono">
-                        {ord.quantity_metres} metres
+                      <span className="font-mono text-lg font-bold text-primary-navy">{ord.order_number}</span>
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-mono font-semibold border border-slate-200">
+                        {ord.quantity_metres.toLocaleString()} metres
                       </span>
                     </div>
-                    <div className="text-xs text-slate-400 mt-1">
-                      {ord.fabric_type} • Colour: <span className="text-slate-300 font-medium">{ord.colour}</span> • Due Date: {new Date(ord.due_date).toLocaleDateString()}
+                    <div className="text-xs text-slate-500 mt-1">
+                      {ord.fabric_type} • Colour: <span className="text-slate-800 font-semibold">{ord.colour}</span> • Due Date: {new Date(ord.due_date).toLocaleDateString()}
                     </div>
                   </div>
 
                   <div className="text-right">
-                    <div className="font-mono text-base font-bold text-white">
+                    <div className="font-mono text-base font-bold text-emerald-700">
                       ${ord.total_revenue?.toLocaleString()}
                     </div>
                     <div className="text-[11px] text-slate-400">
@@ -255,15 +260,15 @@ export default function BuyerOrders() {
 
                 {/* Real-Time Stepper */}
                 <div>
-                  <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
+                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-4">
                     Live Production & Delivery Pipeline
                   </h4>
 
                   <div className="relative flex flex-col md:flex-row justify-between gap-3 md:gap-0">
                     {/* Background Progress Bar */}
-                    <div className="hidden md:block absolute top-3 left-6 right-6 h-1 bg-slate-800 -z-0">
+                    <div className="hidden md:block absolute top-3 left-6 right-6 h-1 bg-slate-200 -z-0">
                       <div
-                        className="h-full bg-sky-500 transition-all duration-500"
+                        className="h-full bg-primary-navy transition-all duration-500"
                         style={{ width: `${(currentStepIdx / (STAGE_STEPS.length - 1)) * 100}%` }}
                       ></div>
                     </div>
@@ -277,19 +282,19 @@ export default function BuyerOrders() {
                           <div
                             className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                               isCompleted
-                                ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/30'
-                                : 'bg-slate-950 border border-slate-800 text-slate-500'
-                            } ${isCurrent ? 'ring-4 ring-sky-500/20' : ''}`}
+                                ? 'bg-primary-navy text-white shadow-sm'
+                                : 'bg-white border-2 border-slate-300 text-slate-400'
+                            } ${isCurrent ? 'ring-4 ring-primary-navy/20' : ''}`}
                           >
                             {isCompleted ? '✓' : idx + 1}
                           </div>
                           <span
-                            className={`text-xs font-medium md:text-center ${
+                            className={`text-xs font-semibold md:text-center ${
                               isCurrent
-                                ? 'text-sky-400 font-bold'
+                                ? 'text-primary-navy font-bold'
                                 : isCompleted
-                                ? 'text-white'
-                                : 'text-slate-500'
+                                ? 'text-slate-800'
+                                : 'text-slate-400'
                             }`}
                           >
                             {step.label}
@@ -302,8 +307,8 @@ export default function BuyerOrders() {
 
                 {/* Dispatched Delivery Manifests if any */}
                 {linkedDispatches.length > 0 && (
-                  <div className="pt-3 border-t border-slate-800">
-                    <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                  <div className="pt-3 border-t border-slate-100">
+                    <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1.5 mb-2">
                       <Truck className="w-3.5 h-3.5" />
                       <span>Delivery Challans Issued</span>
                     </span>
@@ -311,15 +316,15 @@ export default function BuyerOrders() {
                       {linkedDispatches.map((disp) => (
                         <div
                           key={disp.id}
-                          className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center text-xs"
+                          className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center text-xs"
                         >
                           <div>
-                            <div className="font-mono font-bold text-white">{disp.dispatch_number}</div>
-                            <div className="text-[11px] text-slate-400">Invoice: {disp.invoice_number}</div>
+                            <div className="font-mono font-bold text-slate-900">{disp.dispatch_number}</div>
+                            <div className="text-[11px] text-slate-500">Invoice: {disp.invoice_number}</div>
                           </div>
                           <div className="text-right">
-                            <span className="font-mono font-bold text-sky-400">{disp.total_metres} m</span>
-                            <div className="text-[10px] text-slate-500">{new Date(disp.dispatch_date).toLocaleDateString()}</div>
+                            <span className="font-mono font-bold text-primary-navy">{disp.total_metres} m</span>
+                            <div className="text-[10px] text-slate-400">{new Date(disp.dispatch_date).toLocaleDateString()}</div>
                           </div>
                         </div>
                       ))}
@@ -334,50 +339,52 @@ export default function BuyerOrders() {
 
       {/* Place Fabric Order Modal */}
       {showOrderModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-4">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <PlusCircle className="w-5 h-5 text-sky-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <PlusCircle className="w-5 h-5 text-primary-navy" />
                 <span>Place New Manufacturing Contract</span>
               </h3>
-              <button onClick={() => setShowOrderModal(false)} className="text-slate-400 hover:text-white">✕</button>
+              <button onClick={() => setShowOrderModal(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
             {errorMsg && (
-              <div className="p-3 bg-rose-950/70 border border-rose-800 text-rose-300 rounded-xl text-xs">
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-medium">
                 {errorMsg}
               </div>
             )}
 
-            <form onSubmit={handlePlaceOrder} className="space-y-4">
+            <form onSubmit={handlePlaceOrder} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Fabric Type / Construction *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Fabric Type / Construction *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Royal Blue Cotton Poplin 40s"
                   value={orderForm.fabric_type}
                   onChange={(e) => setOrderForm({ ...orderForm, fabric_type: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Colour / Shade *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Colour / Shade *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Royal Blue"
                   value={orderForm.colour}
                   onChange={(e) => setOrderForm({ ...orderForm, colour: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Quantity (Metres) *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Quantity (Metres) *</label>
                   <input
                     type="number"
                     step="10"
@@ -386,24 +393,24 @@ export default function BuyerOrders() {
                     placeholder="e.g. 1000"
                     value={orderForm.quantity_metres}
                     onChange={(e) => setOrderForm({ ...orderForm, quantity_metres: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500 font-mono"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Target Delivery Date *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Target Delivery Date *</label>
                   <input
                     type="date"
                     required
                     value={orderForm.due_date}
                     onChange={(e) => setOrderForm({ ...orderForm, due_date: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Unit Price ($ / Metre)</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Unit Price ($ / Metre)</label>
                 <input
                   type="number"
                   step="0.1"
@@ -411,26 +418,26 @@ export default function BuyerOrders() {
                   required
                   value={orderForm.unit_price}
                   onChange={(e) => setOrderForm({ ...orderForm, unit_price: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500 font-mono"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 font-mono"
                 />
               </div>
 
-              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs text-slate-400">
-                Total Contract Estimate: <strong className="text-white">${((parseFloat(orderForm.quantity_metres) || 0) * (parseFloat(orderForm.unit_price) || 0)).toLocaleString()}</strong>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600">
+                Total Contract Estimate: <strong className="text-slate-900 font-mono">${((parseFloat(orderForm.quantity_metres) || 0) * (parseFloat(orderForm.unit_price) || 0)).toLocaleString()}</strong>
               </div>
 
-              <div className="pt-2 flex justify-end gap-3">
+              <div className="pt-2 flex justify-end gap-2.5 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setShowOrderModal(false)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 bg-sky-500 hover:bg-sky-400 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg shadow-sky-500/20"
+                  className="px-5 py-2 bg-primary-navy hover:bg-secondary-navy text-white rounded-lg text-xs font-semibold flex items-center gap-2 shadow-sm transition disabled:opacity-50"
                 >
                   {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   Submit Contract
