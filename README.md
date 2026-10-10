@@ -15,7 +15,7 @@ An integrated ERP and Manufacturing Execution System (MES) that digitizes textil
 5. [Setup (Windows)](#setup-windows)
 6. [Demo Workflow](#demo-workflow)
 7. [Testing and API](#testing-and-api)
-8. [Troubleshooting](#troubleshooting)
+
 
 ---
 
@@ -159,7 +159,7 @@ The demo data is illustrative, not real factory data.
 
 ## Testing and API
 
-The project includes 33 backend integration tests covering authentication, database constraints and business modules.
+The project includes 43 backend integration tests covering authentication, database constraints and business modules.
 
 **TERMINAL** (project root, with the backend environment configured)
 
