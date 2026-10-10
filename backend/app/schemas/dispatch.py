@@ -23,6 +23,9 @@ class DispatchCreate(BaseModel):
     roll_ids: List[int] = Field(..., min_length=1)
     invoice_number: str
 
+class DispatchStatusUpdate(BaseModel):
+    status: str = Field(..., description="Target delivery status: ready_for_dispatch, dispatched, in_transit, delivered, delivery_failed")
+
 class DispatchItemResponse(BaseModel):
     id: int
     roll_id: int
@@ -41,7 +44,11 @@ class DispatchResponse(BaseModel):
     invoice_number: str
     total_metres: float
     status: str
+    status_label: Optional[str] = None
     dispatch_date: datetime
+    delivered_at: Optional[datetime] = None
+    delivered_by_user_id: Optional[int] = None
+    delivered_by_name: Optional[str] = None
     created_at: datetime
     items: List[DispatchItemResponse] = []
 

@@ -9,13 +9,73 @@ from app.core.deps import get_current_user, require_roles
 from app.models.user import User
 from app.models.orders import CustomerOrder, OrderStatus, Buyer
 from app.models.production import FabricRoll
-from app.models.dispatch import FinishedGood, FinishedGoodStatus, Dispatch, DispatchItem
+from app.models.dispatch import FinishedGood, FinishedGoodStatus, Dispatch, DispatchItem, DeliveryStatus
 from app.schemas.dispatch import (
     AvailableFinishedGoodResponse,
     DispatchCreate,
     DispatchResponse,
-    DispatchItemResponse
+    DispatchItemResponse,
+    DispatchStatusUpdate
 )
+
+DELIVERY_STATUS_MAP = {
+    "ready_for_dispatch": "Ready for Dispatch",
+    "dispatched": "Dispatched",
+    "in_transit": "In Transit",
+    "delivered": "Delivered",
+    "delivery_failed": "Delivery Failed",
+}
+
+def normalize_delivery_status(raw: str) -> str:
+    cleaned = raw.strip().lower().replace(" ", "_").replace("-", "_")
+    if cleaned in DELIVERY_STATUS_MAP:
+        return cleaned
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=f"Invalid delivery status '{raw}'. Valid options: {', '.join(DELIVERY_STATUS_MAP.values())}"
+    )
+
+def build_dispatch_response(d: Dispatch) -> DispatchResponse:
+    delivered_by_name = d.delivered_by.full_name if d.delivered_by else None
+    status_key = d.status.lower().replace(" ", "_") if d.status else "dispatched"
+    status_label = DELIVERY_STATUS_MAP.get(status_key, d.status.replace("_", " ").title())
+    
+    items = [
+        DispatchItemResponse(
+            id=it.id,
+            roll_id=it.roll_id,
+            roll_number=it.roll.roll_number if it.roll else f"Roll #{it.roll_id}",
+            metres=it.metres
+        )
+        for it in d.items
+    ]
+
+    buyer_name = "N/A"
+    if d.buyer:
+        buyer_name = d.buyer.company_name
+    elif d.order and d.order.buyer:
+        buyer_name = d.order.buyer.company_name
+
+    order_number = d.order.order_number if d.order else "N/A"
+
+    return DispatchResponse(
+        id=d.id,
+        dispatch_number=d.dispatch_number,
+        order_id=d.order_id,
+        order_number=order_number,
+        buyer_id=d.buyer_id,
+        buyer_name=buyer_name,
+        invoice_number=d.invoice_number,
+        total_metres=d.total_metres,
+        status=d.status,
+        status_label=status_label,
+        dispatch_date=d.dispatch_date,
+        delivered_at=d.delivered_at,
+        delivered_by_user_id=d.delivered_by_user_id,
+        delivered_by_name=delivered_by_name,
+        created_at=d.created_at,
+        items=items
+    )
 
 router = APIRouter(prefix="/dispatch", tags=["Finished Goods & Dispatch"])
 
@@ -182,20 +242,7 @@ def create_dispatch(
     db.commit()
     db.refresh(dispatch)
 
-    return DispatchResponse(
-        id=dispatch.id,
-        dispatch_number=dispatch.dispatch_number,
-        order_id=dispatch.order_id,
-        order_number=order.order_number,
-        buyer_id=dispatch.buyer_id,
-        buyer_name=order.buyer.company_name if order.buyer else "N/A",
-        invoice_number=dispatch.invoice_number,
-        total_metres=dispatch.total_metres,
-        status=dispatch.status,
-        dispatch_date=dispatch.dispatch_date,
-        created_at=dispatch.created_at,
-        items=item_responses
-    )
+    return build_dispatch_response(dispatch)
 
 @router.get("/history", response_model=List[DispatchResponse])
 def list_dispatch_history(
@@ -220,32 +267,111 @@ def list_dispatch_history(
         raise HTTPException(status_code=403, detail="Not authorized to view dispatch history")
 
     dispatches = query.all()
-    results = []
+    return [build_dispatch_response(d) for d in dispatches]
 
-    for d in dispatches:
-        items = [
-            DispatchItemResponse(
-                id=it.id,
-                roll_id=it.roll_id,
-                roll_number=it.roll.roll_number if it.roll else f"Roll #{it.roll_id}",
-                metres=it.metres
-            )
-            for it in d.items
-        ]
+@router.get("/{dispatch_id}", response_model=DispatchResponse)
+def get_dispatch_details(
+    dispatch_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retrieve details of a single outward dispatch record.
+    Enforces tenant privacy for buyers.
+    """
+    dispatch = db.query(Dispatch).filter(Dispatch.id == dispatch_id).first()
+    if not dispatch:
+        raise HTTPException(status_code=404, detail=f"Dispatch with ID {dispatch_id} not found")
 
-        results.append(DispatchResponse(
-            id=d.id,
-            dispatch_number=d.dispatch_number,
-            order_id=d.order_id,
-            order_number=d.order.order_number if d.order else "N/A",
-            buyer_id=d.buyer_id,
-            buyer_name=d.buyer.company_name if d.buyer else "N/A",
-            invoice_number=d.invoice_number,
-            total_metres=d.total_metres,
-            status=d.status,
-            dispatch_date=d.dispatch_date,
-            created_at=d.created_at,
-            items=items
-        ))
+    role = current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)
+    if role == "buyer":
+        buyer = db.query(Buyer).filter(Buyer.user_id == current_user.id).first()
+        if not buyer or dispatch.buyer_id != buyer.id:
+            raise HTTPException(status_code=403, detail="Not authorized to view this dispatch")
+    elif role not in ["admin", "store_manager", "accounts"]:
+        raise HTTPException(status_code=403, detail="Not authorized to view dispatch details")
 
-    return results
+    return build_dispatch_response(dispatch)
+
+@router.patch("/{dispatch_id}/status", response_model=DispatchResponse)
+def update_dispatch_status(
+    dispatch_id: int,
+    payload: DispatchStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles("admin", "store_manager"))
+):
+    """
+    Update outward dispatch delivery status.
+    Workflow transitions:
+    - ready_for_dispatch
+    - dispatched
+    - in_transit
+    - delivered
+    - delivery_failed
+
+    Enforces:
+    1. Authorized roles only ('admin', 'store_manager').
+    2. Records delivery timestamp and user when delivered.
+    3. Does not deduct finished goods inventory again.
+    """
+    dispatch = db.query(Dispatch).filter(Dispatch.id == dispatch_id).first()
+    if not dispatch:
+        raise HTTPException(status_code=404, detail=f"Dispatch with ID {dispatch_id} not found")
+
+    target_status = normalize_delivery_status(payload.status)
+    dispatch.status = target_status
+
+    if target_status == "delivered":
+        dispatch.delivered_at = datetime.now(timezone.utc)
+        dispatch.delivered_by_user_id = current_user.id
+        if dispatch.order and dispatch.order.status == OrderStatus.dispatched:
+            remaining_undelivered = db.query(Dispatch).filter(
+                Dispatch.order_id == dispatch.order_id,
+                Dispatch.id != dispatch.id,
+                Dispatch.status != "delivered"
+            ).count()
+            if remaining_undelivered == 0:
+                dispatch.order.status = OrderStatus.completed
+    elif target_status in ["dispatched", "in_transit", "ready_for_dispatch", "delivery_failed"]:
+        if target_status != "delivered" and dispatch.delivered_at is not None:
+            # Revert delivery timestamp if transitioned away from delivered
+            dispatch.delivered_at = None
+            dispatch.delivered_by_user_id = None
+            if dispatch.order and dispatch.order.status == OrderStatus.completed:
+                dispatch.order.status = OrderStatus.dispatched
+
+    db.commit()
+    db.refresh(dispatch)
+    return build_dispatch_response(dispatch)
+
+@router.post("/{dispatch_id}/deliver", response_model=DispatchResponse)
+def mark_dispatch_as_delivered(
+    dispatch_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles("admin", "store_manager"))
+):
+    """
+    Direct action: Mark a dispatched delivery as Delivered.
+    Persists delivery timestamp and confirming user in PostgreSQL.
+    Does not duplicate inventory deductions.
+    """
+    dispatch = db.query(Dispatch).filter(Dispatch.id == dispatch_id).first()
+    if not dispatch:
+        raise HTTPException(status_code=404, detail=f"Dispatch with ID {dispatch_id} not found")
+
+    dispatch.status = "delivered"
+    dispatch.delivered_at = datetime.now(timezone.utc)
+    dispatch.delivered_by_user_id = current_user.id
+
+    if dispatch.order and dispatch.order.status == OrderStatus.dispatched:
+        remaining_undelivered = db.query(Dispatch).filter(
+            Dispatch.order_id == dispatch.order_id,
+            Dispatch.id != dispatch.id,
+            Dispatch.status != "delivered"
+        ).count()
+        if remaining_undelivered == 0:
+            dispatch.order.status = OrderStatus.completed
+
+    db.commit()
+    db.refresh(dispatch)
+    return build_dispatch_response(dispatch)

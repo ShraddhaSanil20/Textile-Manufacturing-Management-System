@@ -16,8 +16,53 @@ import {
   Hash,
   ArrowRight,
   Printer,
-  X
+  X,
+  Clock,
+  Check,
+  MapPin,
+  Filter
 } from 'lucide-react';
+
+const DELIVERY_STATUS_OPTIONS = [
+  { value: 'ready_for_dispatch', label: 'Ready for Dispatch' },
+  { value: 'dispatched', label: 'Dispatched' },
+  { value: 'in_transit', label: 'In Transit' },
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'delivery_failed', label: 'Delivery Failed' },
+];
+
+const STATUS_CONFIG = {
+  ready_for_dispatch: {
+    label: 'Ready for Dispatch',
+    badge: 'bg-amber-50 text-amber-800 border-amber-200',
+    dot: 'bg-amber-500',
+  },
+  dispatched: {
+    label: 'Dispatched',
+    badge: 'bg-sky-50 text-sky-800 border-sky-200',
+    dot: 'bg-sky-500',
+  },
+  in_transit: {
+    label: 'In Transit',
+    badge: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+    dot: 'bg-indigo-500',
+  },
+  delivered: {
+    label: 'Delivered',
+    badge: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    dot: 'bg-emerald-600',
+  },
+  delivery_failed: {
+    label: 'Delivery Failed',
+    badge: 'bg-rose-50 text-rose-800 border-rose-200',
+    dot: 'bg-rose-600',
+  },
+};
+
+const getStatusConfig = (rawStatus) => {
+  const key = (rawStatus || 'dispatched').toLowerCase().replace(/[\s-]/g, '_');
+  return STATUS_CONFIG[key] || STATUS_CONFIG.dispatched;
+};
 
 export default function Dispatch() {
   const { user } = useAuth();
@@ -36,12 +81,18 @@ export default function Dispatch() {
   const [showChallanModal, setShowChallanModal] = useState(false);
   const [currentChallan, setCurrentChallan] = useState(null);
 
+  // Status updates
+  const [updatingStatusId, setUpdatingStatusId] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
+
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Authorized roles check
   const canDispatch = ['admin', 'store_manager'].includes(user?.role);
+  const canUpdateDelivery = ['admin', 'store_manager'].includes(user?.role);
 
   const fetchData = async () => {
     try {
@@ -149,8 +200,47 @@ export default function Dispatch() {
     }
   };
 
+  const handleUpdateStatus = async (dispatchId, newStatus) => {
+    try {
+      setUpdatingStatusId(dispatchId);
+      setErrorMsg('');
+      const res = await api.patch(`/dispatch/${dispatchId}/status`, { status: newStatus });
+      setHistory((prev) => prev.map((item) => (item.id === dispatchId ? res.data : item)));
+      if (currentChallan && currentChallan.id === dispatchId) {
+        setCurrentChallan(res.data);
+      }
+      setSuccessMsg(`Dispatch #${res.data.dispatch_number} status updated to "${res.data.status_label || newStatus}"`);
+      setTimeout(() => setSuccessMsg(''), 4000);
+    } catch (err) {
+      setErrorMsg(err.response?.data?.detail || 'Failed to update delivery status');
+      setTimeout(() => setErrorMsg(''), 5000);
+    } finally {
+      setUpdatingStatusId(null);
+    }
+  };
+
+  const handleMarkDelivered = async (dispatchId) => {
+    try {
+      setUpdatingStatusId(dispatchId);
+      setErrorMsg('');
+      const res = await api.post(`/dispatch/${dispatchId}/deliver`);
+      setHistory((prev) => prev.map((item) => (item.id === dispatchId ? res.data : item)));
+      if (currentChallan && currentChallan.id === dispatchId) {
+        setCurrentChallan(res.data);
+      }
+      setSuccessMsg(`Dispatch #${res.data.dispatch_number} marked as Delivered successfully!`);
+      setTimeout(() => setSuccessMsg(''), 4000);
+    } catch (err) {
+      setErrorMsg(err.response?.data?.detail || 'Failed to mark as delivered');
+      setTimeout(() => setErrorMsg(''), 5000);
+    } finally {
+      setUpdatingStatusId(null);
+    }
+  };
+
   const totalAvailableMetres = finishedGoods.reduce((acc, fg) => acc + fg.length_metres, 0);
   const totalDispatchedMetres = history.reduce((acc, d) => acc + d.total_metres, 0);
+  const deliveredCount = history.filter((d) => (d.status || '').toLowerCase() === 'delivered').length;
 
   // Calculate selected rolls metres
   const selectedMetres = finishedGoods
@@ -159,12 +249,19 @@ export default function Dispatch() {
 
   const filteredHistory = history.filter((d) => {
     const q = searchQuery.toLowerCase();
-    return (
-      d.dispatch_number.toLowerCase().includes(q) ||
-      d.order_number.toLowerCase().includes(q) ||
-      d.buyer_name.toLowerCase().includes(q) ||
-      d.invoice_number.toLowerCase().includes(q)
+    const matchesQuery = (
+      d.dispatch_number?.toLowerCase().includes(q) ||
+      d.order_number?.toLowerCase().includes(q) ||
+      d.buyer_name?.toLowerCase().includes(q) ||
+      d.invoice_number?.toLowerCase().includes(q) ||
+      d.status?.toLowerCase().includes(q) ||
+      (d.status_label && d.status_label.toLowerCase().includes(q))
     );
+
+    const normStatus = (d.status || 'dispatched').toLowerCase().replace(/[\s-]/g, '_');
+    const matchesStatus = statusFilter === 'all' || normStatus === statusFilter;
+
+    return matchesQuery && matchesStatus;
   });
 
   return (
@@ -174,14 +271,14 @@ export default function Dispatch() {
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 tracking-wide uppercase">
-              Finished Goods & Delivery
+              Finished Goods & Outward Dispatch
             </span>
             <span className="text-xs text-slate-400">•</span>
-            <span className="text-xs font-medium text-slate-500">Atomic Challan Generation</span>
+            <span className="text-xs font-medium text-slate-500">Delivery Status & Challans</span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mt-2 tracking-tight">Finished Goods & Outward Dispatch</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Atomic delivery challan dispatch. Rolls that passed quality check are deducted and sealed with buyer invoices.
+            End-to-end dispatch and delivery workflow. Track shipments from Ready for Dispatch to Delivered with authorized confirmations.
           </p>
         </div>
         <button
@@ -201,12 +298,19 @@ export default function Dispatch() {
         </div>
       )}
 
+      {errorMsg && (
+        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl flex items-center gap-2.5 text-xs font-medium shadow-sm">
+          <AlertCircle className="w-5 h-5 shrink-0 text-rose-600" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm">
           <span className="text-xs text-emerald-700 font-semibold uppercase tracking-wider">Available Rolls</span>
           <div className="text-2xl font-bold text-slate-900 mt-1 font-mono">{finishedGoods.length}</div>
-          <div className="text-[11px] text-slate-400 mt-1">Passed inspection</div>
+          <div className="text-[11px] text-slate-400 mt-1">Passed inspection in stock</div>
         </div>
         <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm">
           <span className="text-xs text-sky-700 font-semibold uppercase tracking-wider">Finished Stock Metres</span>
@@ -214,14 +318,16 @@ export default function Dispatch() {
           <div className="text-[11px] text-slate-400 mt-1">Ready for dispatch</div>
         </div>
         <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm">
-          <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Completed Dispatches</span>
+          <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Dispatches Issued</span>
           <div className="text-2xl font-bold text-slate-900 mt-1 font-mono">{history.length}</div>
-          <div className="text-[11px] text-slate-400 mt-1">Challans issued</div>
+          <div className="text-[11px] text-slate-400 mt-1">Total challans generated</div>
         </div>
         <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm">
-          <span className="text-xs text-purple-700 font-semibold uppercase tracking-wider">Total Dispatched</span>
-          <div className="text-2xl font-bold text-purple-700 mt-1 font-mono">{totalDispatchedMetres.toLocaleString()} <span className="font-sans font-normal text-xs text-slate-500">m</span></div>
-          <div className="text-[11px] text-slate-400 mt-1">Fulfilled to buyers</div>
+          <span className="text-xs text-emerald-700 font-semibold uppercase tracking-wider">Delivered Dispatches</span>
+          <div className="text-2xl font-bold text-emerald-700 mt-1 font-mono">
+            {deliveredCount} <span className="font-sans font-normal text-xs text-slate-500">/ {history.length}</span>
+          </div>
+          <div className="text-[11px] text-slate-400 mt-1">{totalDispatchedMetres.toLocaleString()} m dispatched</div>
         </div>
       </div>
 
@@ -354,14 +460,8 @@ export default function Dispatch() {
               </div>
               <h3 className="text-lg font-bold text-slate-900">Outward Challan</h3>
               <p className="text-xs text-slate-500 mt-1">
-                Select rolls belonging to an order and generate an official delivery challan.
+                Select rolls belonging to an order and generate an official delivery challan. Initial status is Dispatched.
               </p>
-
-              {errorMsg && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs mt-4 font-medium">
-                  {errorMsg}
-                </div>
-              )}
 
               <div className="my-5 p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
                 <div className="flex justify-between text-xs">
@@ -424,7 +524,7 @@ export default function Dispatch() {
       {/* TAB 2: DISPATCH HISTORY */}
       {activeTab === 'history' && (
         <div className="space-y-4">
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-sm">
             <div className="relative w-full max-w-sm">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -435,6 +535,23 @@ export default function Dispatch() {
                 className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
               />
             </div>
+
+            <div className="flex items-center gap-2">
+              <Filter className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-xs text-slate-500 font-medium">Status:</span>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 cursor-pointer"
+              >
+                <option value="all">All Delivery Statuses</option>
+                {DELIVERY_STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
@@ -444,7 +561,7 @@ export default function Dispatch() {
               </div>
             ) : filteredHistory.length === 0 ? (
               <div className="py-12 text-center text-slate-400 text-xs font-medium">
-                No past dispatches recorded.
+                No past dispatches found matching your search.
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -455,50 +572,113 @@ export default function Dispatch() {
                       <th className="py-3 px-4">Order #</th>
                       <th className="py-3 px-4">Buyer</th>
                       <th className="py-3 px-4">Invoice #</th>
-                      <th className="py-3 px-4">Total Metres</th>
-                      <th className="py-3 px-4">Rolls</th>
-                      <th className="py-3 px-4">Date</th>
-                      <th className="py-3 px-4 text-right">Delivery Challan</th>
+                      <th className="py-3 px-4">Metres / Rolls</th>
+                      <th className="py-3 px-4">Dispatch Date</th>
+                      <th className="py-3 px-4">Delivery Status</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {filteredHistory.map((d) => (
-                      <tr key={d.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3.5 px-4 font-mono font-bold text-primary-navy">
-                          {d.dispatch_number}
-                        </td>
-                        <td className="py-3.5 px-4 font-mono font-semibold text-teal-700">
-                          {d.order_number}
-                        </td>
-                        <td className="py-3.5 px-4 font-medium text-slate-900">
-                          {d.buyer_name}
-                        </td>
-                        <td className="py-3.5 px-4 font-mono text-xs text-slate-600">
-                          {d.invoice_number}
-                        </td>
-                        <td className="py-3.5 px-4 font-bold text-slate-900 font-mono">
-                          {d.total_metres.toLocaleString()} m
-                        </td>
-                        <td className="py-3.5 px-4 text-xs text-slate-500">
-                          {d.items.length} roll(s)
-                        </td>
-                        <td className="py-3.5 px-4 text-xs text-slate-500">
-                          {new Date(d.dispatch_date).toLocaleDateString()}
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <button
-                            onClick={() => {
-                              setCurrentChallan(d);
-                              setShowChallanModal(true);
-                            }}
-                            className="px-3 py-1.5 bg-slate-100 hover:bg-primary-navy hover:text-white text-slate-700 rounded-lg text-xs font-semibold transition-colors border border-slate-200 flex items-center gap-1.5 ml-auto"
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                            <span>View Challan</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredHistory.map((d) => {
+                      const normStatus = (d.status || 'dispatched').toLowerCase().replace(/[\s-]/g, '_');
+                      const statusCfg = getStatusConfig(normStatus);
+                      const isDelivered = normStatus === 'delivered';
+
+                      return (
+                        <tr key={d.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3.5 px-4 font-mono font-bold text-primary-navy">
+                            {d.dispatch_number}
+                          </td>
+                          <td className="py-3.5 px-4 font-mono font-semibold text-teal-700">
+                            {d.order_number}
+                          </td>
+                          <td className="py-3.5 px-4 font-medium text-slate-900">
+                            {d.buyer_name}
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-xs text-slate-600">
+                            {d.invoice_number}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="font-bold text-slate-900 font-mono">{d.total_metres.toLocaleString()} m</span>
+                            <span className="text-[11px] text-slate-500 block">{d.items?.length || 0} roll(s)</span>
+                          </td>
+                          <td className="py-3.5 px-4 text-xs text-slate-500 whitespace-nowrap">
+                            {new Date(d.dispatch_date).toLocaleDateString()}
+                          </td>
+                          <td className="py-3.5 px-4 min-w-[210px]">
+                            <div className="flex flex-col gap-1">
+                              <span
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border w-fit ${
+                                  statusCfg.badge
+                                }`}
+                              >
+                                <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`}></span>
+                                {d.status_label || statusCfg.label}
+                              </span>
+                              {isDelivered && (
+                                <div className="text-[11px] text-emerald-700 font-medium flex items-center gap-1 mt-0.5">
+                                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+                                  <span title={d.delivered_at ? new Date(d.delivered_at).toLocaleString() : ''}>
+                                    {d.delivered_at ? new Date(d.delivered_at).toLocaleDateString() : 'Delivered'}
+                                    {d.delivered_by_name ? ` by ${d.delivered_by_name}` : ''}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {canUpdateDelivery && (
+                                <div className="flex items-center gap-1.5">
+                                  {!isDelivered && (
+                                    <button
+                                      onClick={() => handleMarkDelivered(d.id)}
+                                      disabled={updatingStatusId === d.id}
+                                      className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-xs flex items-center gap-1 disabled:opacity-50"
+                                      title="Mark this dispatch as Delivered"
+                                      id={`mark-delivered-btn-${d.id}`}
+                                    >
+                                      {updatingStatusId === d.id ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                      ) : (
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                      )}
+                                      <span className="hidden sm:inline">Delivered</span>
+                                    </button>
+                                  )}
+                                  <select
+                                    value={normStatus}
+                                    onChange={(e) => handleUpdateStatus(d.id, e.target.value)}
+                                    disabled={updatingStatusId === d.id}
+                                    className="bg-white border border-slate-200 text-slate-700 rounded-lg px-2 py-1.5 text-xs font-medium focus:ring-1 focus:ring-primary-navy focus:outline-none cursor-pointer disabled:opacity-50"
+                                    title="Change Delivery Status Workflow"
+                                    id={`status-select-${d.id}`}
+                                  >
+                                    {DELIVERY_STATUS_OPTIONS.map((opt) => (
+                                      <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setCurrentChallan(d);
+                                  setShowChallanModal(true);
+                                }}
+                                className="px-2.5 py-1.5 bg-slate-100 hover:bg-primary-navy hover:text-white text-slate-700 rounded-lg text-xs font-semibold transition-colors border border-slate-200 flex items-center gap-1"
+                                title="View Delivery Challan"
+                                id={`view-challan-btn-${d.id}`}
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                <span className="hidden md:inline">Challan</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -523,8 +703,17 @@ export default function Dispatch() {
                 <p className="text-[11px] text-slate-500 mt-0.5">
                   Industrial Area Phase II, Mill Road • ISO 9001:2015 Certified Textile Mill
                 </p>
-                <div className="inline-block mt-1.5 px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200 text-[10px] font-bold uppercase tracking-wider">
-                  Official Outward Delivery Challan
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200 text-[10px] font-bold uppercase tracking-wider">
+                    Official Outward Delivery Challan
+                  </span>
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                      getStatusConfig(currentChallan.status).badge
+                    }`}
+                  >
+                    Status: {currentChallan.status_label || getStatusConfig(currentChallan.status).label}
+                  </span>
                 </div>
               </div>
               <div className="text-right">
@@ -533,6 +722,24 @@ export default function Dispatch() {
                 <div className="text-[11px] text-slate-500">Date: {new Date(currentChallan.dispatch_date).toLocaleDateString()}</div>
               </div>
             </div>
+
+            {/* Delivery Confirmation Banner (if Delivered) */}
+            {currentChallan.status === 'delivered' && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs text-emerald-900">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="font-semibold">Delivery Confirmed</span>
+                  {currentChallan.delivered_by_name && (
+                    <span className="text-emerald-700">• Received by Consignee, authorized by {currentChallan.delivered_by_name}</span>
+                  )}
+                </div>
+                {currentChallan.delivered_at && (
+                  <span className="font-mono text-[11px] text-emerald-700">
+                    {new Date(currentChallan.delivered_at).toLocaleString()}
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Recipient & Order Reference Details */}
             <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
@@ -550,7 +757,7 @@ export default function Dispatch() {
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <h4 className="text-[11px] font-bold uppercase text-slate-600">Dispatched Roll Manifest</h4>
-                <span className="text-[10px] font-semibold text-slate-400">{currentChallan.items.length} Serialized Roll(s)</span>
+                <span className="text-[10px] font-semibold text-slate-400">{currentChallan.items?.length || 0} Serialized Roll(s)</span>
               </div>
               <div className="border border-slate-200 rounded-lg overflow-hidden max-h-40 overflow-y-auto">
                 <table className="w-full text-left text-xs">
@@ -562,7 +769,7 @@ export default function Dispatch() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {currentChallan.items.map((it, idx) => (
+                    {(currentChallan.items || []).map((it, idx) => (
                       <tr key={it.id || idx}>
                         <td className="py-1.5 px-3 text-slate-400 text-[11px]">{idx + 1}</td>
                         <td className="py-1.5 px-3 font-mono font-medium text-slate-900 text-[11px]">{it.roll_number}</td>
@@ -577,7 +784,7 @@ export default function Dispatch() {
             {/* Total Footer Summary */}
             <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
               <span className="text-xs font-bold text-slate-700 uppercase">Total Net Metres Dispatched:</span>
-              <span className="text-lg font-black text-primary-navy font-mono">{currentChallan.total_metres.toLocaleString()} m</span>
+              <span className="text-lg font-black text-primary-navy font-mono">{currentChallan.total_metres?.toLocaleString() || 0} m</span>
             </div>
 
             {/* Official Signatures & Verification Block (Print Ready) */}
@@ -588,21 +795,41 @@ export default function Dispatch() {
               </div>
               <div className="text-center pt-6 border-t border-slate-300 border-dashed">
                 <span className="text-[11px] font-semibold text-slate-600">Consignee Acceptance Signature</span>
-                <p className="text-[10px] text-slate-400 mt-0.5">Received in sound condition</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  {currentChallan.status === 'delivered' ? '✓ Received & Verified' : 'Received in sound condition'}
+                </p>
               </div>
             </div>
 
             {/* Action Buttons (Hidden during printing) */}
-            <div className="no-print flex justify-between items-center pt-3 border-t border-slate-200 shrink-0">
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-2 border border-slate-200 transition"
-                id="print-challan-btn"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print Single-Page Challan</span>
-              </button>
+            <div className="no-print flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-3 border-t border-slate-200 shrink-0">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-2 border border-slate-200 transition"
+                  id="print-challan-btn"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print Single-Page Challan</span>
+                </button>
+                {canUpdateDelivery && currentChallan.status !== 'delivered' && (
+                  <button
+                    type="button"
+                    onClick={() => handleMarkDelivered(currentChallan.id)}
+                    disabled={updatingStatusId === currentChallan.id}
+                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition disabled:opacity-50"
+                    id="modal-mark-delivered-btn"
+                  >
+                    {updatingStatusId === currentChallan.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    )}
+                    <span>Mark as Delivered</span>
+                  </button>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => setShowChallanModal(false)}
