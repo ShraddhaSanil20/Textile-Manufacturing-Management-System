@@ -15,7 +15,7 @@ An integrated ERP and Manufacturing Execution System (MES) that digitizes textil
 5. [Setup (Windows)](#setup-windows)
 6. [Demo Workflow](#demo-workflow)
 7. [Testing and API](#testing-and-api)
-
+8. [Deployment Guide](#deployment-guide)
 
 ---
 
@@ -171,6 +171,16 @@ python -m pytest backend/tests -v
 
 ---
 
+## Deployment Guide
+
+For detailed cloud and container setup steps, see [DEPLOYMENT.md](DEPLOYMENT.md).
+
+Quick options ready out-of-the-box:
+- **Render Blueprint (1-Click)**: Uses [`render.yaml`](render.yaml) to provision PostgreSQL, FastAPI backend, and React static frontend automatically.
+- **Vercel + Render / Neon**: Global edge CDN frontend on Vercel with FastAPI & PostgreSQL on Render or Neon.
+- **Full-Stack Docker**: Run [`docker-compose.prod.yml`](docker-compose.prod.yml) on any VPS or cloud container platform.
+
+---
 
 ## Expected Outcome
 

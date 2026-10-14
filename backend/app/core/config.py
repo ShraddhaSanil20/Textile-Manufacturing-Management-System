@@ -21,7 +21,10 @@ class Settings(BaseSettings):
     def validate_database_url(cls, v: str) -> str:
         if not v or not v.strip():
             raise ValueError("DATABASE_URL environment variable is required and cannot be empty.")
-        return v.strip()
+        v = v.strip()
+        if v.startswith("postgres://"):
+            v = "postgresql://" + v[len("postgres://"):]
+        return v
 
     @field_validator("SECRET_KEY")
     @classmethod

@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16
+    container_name: textile_prod_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-textile_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-textile_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-textile_db}
+    ports:
+      - "5433:5432"
+    volumes:
+      - textile_prod_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U textile_user -d textile_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: textile_prod_api
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://textile_user:textile_pass@db:5432/textile_db
+      SECRET_KEY: ${SECRET_KEY:-replace-with-a-secure-production-secret-key-123}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      PORT: 8000
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api}
+    container_name: textile_prod_web
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  textile_prod_pgdata:

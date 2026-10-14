@@ -1,0 +1,47 @@
+services:
+  # 1. FastAPI Backend Web Service
+  - type: web
+    name: textile-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    region: oregon
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "chmod +x start.sh && ./start.sh"
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: textile-postgres
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 120
+      - key: CORS_ORIGINS
+        value: "*"
+
+  # 2. React Vite Frontend Static Site
+  - type: web
+    name: textile-frontend
+    runtime: static
+    rootDir: frontend
+    plan: free
+    region: oregon
+    buildCommand: "npm install && npm run build"
+    staticPublishPath: "dist"
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: "/index.html"
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: "https://textile-api.onrender.com/api"
+
+databases:
+  # 3. Managed PostgreSQL Database
+  - name: textile-postgres
+    databaseName: textile_db
+    user: textile_user
+    plan: free
+    region: oregon
